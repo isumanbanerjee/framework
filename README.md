@@ -75,7 +75,7 @@ A lightweight and modular PHP framework designed for simplicity, performance, an
 
 This framework uses PSR-4 autoloading for easy management of namespaces and files. Below is the namespace-to-directory mapping:
 
-| Namespace                        | Directory                  |
+| Namespace                        | Directory                 |
 |----------------------------------|---------------------------|
 | `Configuration\`                 | `Configuration/`          |
 | `Core\`                          | `Core/`                   |
@@ -85,6 +85,22 @@ This framework uses PSR-4 autoloading for easy management of namespaces and file
 | `System\Model\`                  | `System/Model/`           |
 | `System\View\`                   | `System/View/`            |
 | `System\Controller\`             | `System/Controller/`      |
+
+---
+
+### Namespace Overview
+
+- **Core**: Contains the core functionality of the framework that is fundamental and immutable. These classes should not be altered as they provide the essential building blocks of the framework.
+- **System**: Includes classes that inherit and extend functionality from the Core namespace, allowing customization and project-specific logic while maintaining the integrity of core functionalities.| Namespace                        | Directory                  |
+  |----------------------------------|---------------------------|
+  | `Configuration\`                 | `Configuration/`          |
+  | `Core\`                          | `Core/`                   |
+  | `Core\Model\`                    | `Core/Model/`             |
+  | `Core\View\`                     | `Core/View/`              |
+  | `Core\Controller\`               | `Core/Controller/`        |
+  | `System\Model\`                  | `System/Model/`           |
+  | `System\View\`                   | `System/View/`            |
+  | `System\Controller\`             | `System/Controller/`      |
 
 ---
 
@@ -144,3 +160,7 @@ This framework is licensed under the GPL-3.0-or-later License. See the [LICENSE]
 **Suman Banerjee**
 - Email: [contact@isumanbanerjee.com](mailto:contact@isumanbanerjee.com)
 - GitHub: [isumanbanerjee](https://github.com/isumanbanerjee)
+
+---
+
+Happy coding! 🎉
