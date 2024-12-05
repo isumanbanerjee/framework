@@ -46,12 +46,12 @@ A lightweight and modular PHP framework designed for simplicity, performance, an
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/isumanbanerjee/framework.git
+   git clone https://github.com/yourusername/your-repository.git
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd project-directory
+   cd your-repository
    ```
 
 3. Install dependencies using Composer:
@@ -66,7 +66,7 @@ A lightweight and modular PHP framework designed for simplicity, performance, an
 ### Getting Started
 
 1. Configure your environment variables in `.env` (if applicable).
-2. Use the pre-configured `Core` and `System` namespaces to structure your application.
+2. Use the pre-configured `Core`, `System`, and `Configuration` namespaces to structure your application.
 3. Leverage built-in tools like routing, database handling, and templating to kickstart your project.
 
 ---
@@ -75,12 +75,13 @@ A lightweight and modular PHP framework designed for simplicity, performance, an
 
 This framework uses PSR-4 autoloading for easy management of namespaces and files. Below is the namespace-to-directory mapping:
 
-| Namespace                        | Directory                 |
+| Namespace                        | Directory                  |
 |----------------------------------|---------------------------|
+| `Configuration\`                 | `Configuration/`          |
 | `Core\`                          | `Core/`                   |
-| `Core\Configuration\`            | `Core/Configuration/`     |
 | `Core\Model\`                    | `Core/Model/`             |
-| `Core\Model\External\`           | `Core/Model/External/`    |
+| `Core\View\`                     | `Core/View/`              |
+| `Core\Controller\`               | `Core/Controller/`        |
 | `System\Model\`                  | `System/Model/`           |
 | `System\View\`                   | `System/View/`            |
 | `System\Controller\`             | `System/Controller/`      |
@@ -96,7 +97,6 @@ The framework comes bundled with several popular libraries to enhance functional
 - **jQuery (v3.4.1)**: JavaScript library for DOM manipulation.
 - **PHPMailer (v6.8.0)**: Email sending library.
 - **Chart.js (v4.3.3)**: Interactive charts and graphs.
-- **mPDF (v8.1.6)**: PDF generation.
 - **Ramsey/UUID (v4.7.4)**: Universally unique identifier library.
 - **MatthiasMullie/Minify (v1.3.70)**: CSS and JavaScript minification.
 - **Voku/HTML-Min (v4.5.0)**: HTML minification.
@@ -108,12 +108,10 @@ The framework comes bundled with several popular libraries to enhance functional
 ## Directory Structure
 
 ```plaintext
+├── Configuration/
 ├── Core/
-│   ├── Configuration/
 │   ├── Controller/
 │   ├── Model/
-│   │   ├── External/
-│   │   │   └── ResellerClub/
 │   └── View/
 ├── System/
 │   ├── Controller/
@@ -137,7 +135,7 @@ Contributions are welcome! Please fork this repository, create a feature branch,
 
 ## License
 
-This framework is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This framework is licensed under the GPL-3.0-or-later License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -146,7 +144,3 @@ This framework is licensed under the MIT License. See the [LICENSE](LICENSE) fil
 **Suman Banerjee**
 - Email: [contact@isumanbanerjee.com](mailto:contact@isumanbanerjee.com)
 - GitHub: [isumanbanerjee](https://github.com/isumanbanerjee)
-
----
-
-Happy coding! 🎉

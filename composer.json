@@ -2,7 +2,7 @@
   "name": "isumanbanerjee/framework",
   "description": "A lightweight and modular PHP framework designed for simplicity, performance, and flexibility. Ideal for developers who prefer clean, concise, and efficient code, this framework empowers you to build scalable and secure web applications without the overhead of larger frameworks.",
   "minimum-stability": "stable",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "authors": [
     {
       "name": "Suman Banerjee",
@@ -36,8 +36,8 @@
   },
   "autoload": {
     "psr-4": {
+      "Configuration\\": "Configuration",
       "Core\\": "Core/",
-      "Core\\Configuration\\": "Core/Configuration",
       "Core\\Model\\": "Core/Model",
       "Core\\View\\": "Core/View",
       "Core\\Controller\\": "Core/Controller",
