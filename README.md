@@ -34,10 +34,10 @@ A lightweight and modular PHP framework designed for simplicity, performance, an
 
 - **PHP 8.4 or higher**
 - Required PHP extensions:
-    - `curl`
-    - `fileinfo`
-    - `openssl`
-    - `pdo`
+  - `curl`
+  - `fileinfo`
+  - `openssl`
+  - `pdo`
 - Composer
 
 ---
@@ -46,12 +46,12 @@ A lightweight and modular PHP framework designed for simplicity, performance, an
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/your-repository.git
+   git clone https://github.com/isumanbanerjee/framework.git
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd your-repository
+   cd framework
    ```
 
 3. Install dependencies using Composer:
@@ -159,7 +159,7 @@ This framework is licensed under the GPL-3.0-or-later License. See the [LICENSE]
 
 **Suman Banerjee**
 - Email: [contact@isumanbanerjee.com](mailto:contact@isumanbanerjee.com)
-- GitHub: [isumanbanerjee](https://github.com/isumanbanerjee)
+- GitHub: [isumanbanerjee](https://github.com/isumanbanerjee/framework)
 
 ---
 
