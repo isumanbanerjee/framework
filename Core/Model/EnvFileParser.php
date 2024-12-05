@@ -1,6 +1,6 @@
 <?php
 
-namespace Action;
+namespace Core\Model;
 
 /**
  * Class EnvFileParser
@@ -30,7 +30,7 @@ class EnvFileParser
      *
      * @param string $envDirectory Directory to scan for environment files.
      */
-    public function __construct(string $envDirectory = __DIR__ . '/../Configuration')
+    public function __construct(string $envDirectory = __DIR__ . '/../../Configuration')
     {
         $this->envDirectory = $envDirectory;
     }
