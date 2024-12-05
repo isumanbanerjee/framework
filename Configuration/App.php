@@ -2,7 +2,7 @@
 
 namespace Configuration;
 
-use Action\EnvFileParser;
+use Core\Model\EnvFileParser;
 use InvalidArgumentException;
 
 /**
