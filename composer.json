@@ -36,6 +36,7 @@
   },
   "autoload": {
     "psr-4": {
+      "Action\\": "Action",
       "Configuration\\": "Configuration",
       "Core\\": "Core/",
       "Core\\Model\\": "Core/Model",
