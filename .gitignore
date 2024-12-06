@@ -1,6 +1,25 @@
-composer.phar
-/vendor/
+# The following files are ignored by Git to prevent sensitive or unnecessary files from being committed to the repository.
 
-# Commit your application's lock file https://getcomposer.org/doc/01-basic-usage.md#commit-your-composer-lock-file-to-version-control
-# You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
-# composer.lock
+# Ignore the environment configuration file.
+/Configuration/config.env
+
+# Ignore the compiled configuration file.
+/Configuration/config_compiled.php
+
+# Ignore the error configuration file.
+/Configuration/error.env
+
+# Ignore the compiled error configuration file.
+/Configuration/error_compiled.php
+
+# Ignore the Composer PHAR file.
+composer.phar
+
+# Ignore the Composer lock file.
+composer.lock
+
+# Ignore all PHP files starting with 'test'.
+test*.php
+
+# Ignore the vendor directory.
+vendor/
