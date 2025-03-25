@@ -1,0 +1,22 @@
+{
+  "shard1": {
+    "DB_TYPE": "mysql",
+    "DB_HOST": "shard1_host",
+    "DB_PORT": "3306",
+    "DB_NAME": "shard1_database",
+    "DB_USERNAME": "shard1_username",
+    "DB_PASSWORD": "shard1_password",
+    "DB_CHARSET": "utf8",
+    "DB_SOCKET": ""
+  },
+  "shard2": {
+    "DB_TYPE": "mysql",
+    "DB_HOST": "shard2_host",
+    "DB_PORT": "3306",
+    "DB_NAME": "shard2_database",
+    "DB_USERNAME": "shard2_username",
+    "DB_PASSWORD": "shard2_password",
+    "DB_CHARSET": "utf8",
+    "DB_SOCKET": ""
+  }
+}
