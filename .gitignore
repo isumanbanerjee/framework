@@ -1,13 +1,7 @@
 # The following files are ignored by Git to prevent sensitive or unnecessary files from being committed to the repository.
 
-# Ignore the environment configuration file.
-/Configuration/config.env
-
 # Ignore the compiled configuration file.
 /Configuration/config_compiled.php
-
-# Ignore the error configuration file.
-/Configuration/error.env
 
 # Ignore the compiled error configuration file.
 /Configuration/error_compiled.php
