@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Framework Console Application
+ *
+ * Command-line interface for the framework.
+ *
+ * Usage: php console [command] [options]
+ */
+
+require_once __DIR__ . '/resources/vendor/autoload.php';
+
+use Core\Model\Console;
+
+$console = new Console();
+exit($console->run($argv));
+
