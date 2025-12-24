@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdoc
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://www.phpdoc.org"
+    xsi:noNamespaceSchemaLocation="https://docs.phpdoc.org/latest/phpdoc.xsd"
+    configVersion="3">
+
+    <title>Framework - API Documentation</title>
+
+    <paths>
+        <output>Documentation</output>
+    </paths>
+
+    <version number="2.0.0">
+        <api>
+            <source dsn=".">
+                <path>Core</path>
+            </source>
+            <output>Documentation</output>
+            <ignore hidden="true" symlinks="true">
+                <path>vendor/**/*</path>
+                <path>tests/**/*</path>
+                <path>Documentation/**/*</path>
+            </ignore>
+            <extensions>
+                <extension>php</extension>
+            </extensions>
+            <visibility>public</visibility>
+            <visibility>protected</visibility>
+            <default-package-name>Framework</default-package-name>
+            <markers>
+                <marker>TODO</marker>
+                <marker>FIXME</marker>
+            </markers>
+        </api>
+    </version>
+
+    <setting name="graphs.enabled" value="true"/>
+    <setting name="ui.enabled" value="true"/>
+
+    <template name="default"/>
+</phpdoc>
+

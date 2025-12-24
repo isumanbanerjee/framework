@@ -1,0 +1,30 @@
+services:
+  php-dev84:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM php:8.4-apache
+        # Install system dependencies for GD, Intl, and Imagick
+        RUN apt-get update && apt-get install -y \
+            git unzip zip \
+            libpng-dev libjpeg-dev libfreetype6-dev \
+            libicu-dev \
+            libmagickwand-dev --no-install-recommends
+        
+        # Install PHP extensions
+        RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+            && docker-php-ext-install -j$(nproc) mysqli intl exif gd
+        
+        # Install Imagick (requires pecl)
+        RUN pecl install imagick && docker-php-ext-enable imagick
+        
+        # Copy composer
+        COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8080:80"
+    working_dir: /var/www/html
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4

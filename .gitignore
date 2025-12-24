@@ -1,19 +1,4 @@
-# The following files are ignored by Git to prevent sensitive or unnecessary files from being committed to the repository.
-
-# Ignore the compiled configuration file.
-/Configuration/config_compiled.php
-
-# Ignore the compiled error configuration file.
-/Configuration/error_compiled.php
-
-# Ignore the Composer PHAR file.
-composer.phar
-
-# Ignore the Composer lock file.
-composer.lock
-
-# Ignore all PHP files starting with 'test'.
-test*.php
-
-# Ignore the vendor directory.
-vendor/
+Documentation/*
+!Documentation/README.md
+!Documentation/.gitkeep
+Resources/*

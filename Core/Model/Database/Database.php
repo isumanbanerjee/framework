@@ -1,24 +1,159 @@
 <?php
-/*
- * COPYRIGHT (c) [SUMAN BANERJEE] - All Rights Reserved
- * SUMAN BANERJEE <contact@isumanbanerjee.com>
- * Project Name: FRAMEWORK
- * Created by: Suman Banerjee <contact@isumanbanerjee.com>.
+
+/**
+ * Multi-Database Connection Manager with Advanced Features
+ *
+ * This file contains the Database class which provides comprehensive database
+ * connectivity with support for multiple database types, connection pooling,
+ * caching, replication, sharding, and advanced query operations.
+ *
+ * PHP version 8.1
+ *
+ * @category  Database
+ * @package   Core\Model\Database
+ * @author    Suman Banerjee <contact@isumanbanerjee.com>
+ * @copyright 2025 Suman Banerjee. All rights reserved.
+ * @license   Proprietary
+ * @link      https://isumanbanerjee.com
+ * @since     1.0.0
  */
+
+declare(strict_types=1);
 
 namespace Core\Model\Database;
 
+use Core\Model\App;
 use Core\Model\Error;
 use Core\Model\Logger;
 use PDO;
 use PDOException;
 use Psr\SimpleCache\CacheInterface;
 
+/**
+ * Database Class
+ *
+ * Comprehensive database abstraction layer supporting multiple database
+ * systems with advanced features including connection pooling, query
+ * caching, replication, sharding, migrations, and monitoring.
+ *
+ * Supported database types:
+ * - MySQL / MariaDB
+ * - PostgreSQL
+ * - SQL Server (sqlsrv)
+ * - Oracle (oci)
+ * - IBM DB2
+ * - SQLite
+ *
+ * Features:
+ * - Multi-database support with unified interface
+ * - Persistent connections for performance
+ * - Prepared statement support
+ * - Transaction management with savepoints
+ * - Query result caching
+ * - Read replica support
+ * - Database sharding
+ * - Connection failover
+ * - Query execution timing and logging
+ * - Slow query detection
+ * - Batch operations (insert/update)
+ * - Migration and seeding support
+ * - Database backup management
+ * - Schema validation
+ * - SSL/TLS encryption support
+ *
+ * Security features:
+ * - Prepared statements prevent SQL injection
+ * - Input sanitization helpers
+ * - SSL/TLS encrypted connections
+ * - Credential validation
+ * - Error rate limiting
+ *
+ * Performance features:
+ * - Persistent connections
+ * - Query result caching
+ * - Batch operations
+ * - Read replica routing
+ * - Connection pooling
+ *
+ * Example usage:
+ * ```php
+ * $db = new Database($logger);
+ *
+ * // Basic queries
+ * $users = $db->fetchAll("SELECT * FROM users WHERE active = ?", [1]);
+ * $user = $db->fetchOne("SELECT * FROM users WHERE id = ?", [5]);
+ *
+ * // Transactions
+ * $db->beginTransaction();
+ * $db->executeQuery("UPDATE users SET balance = balance - ? WHERE id = ?", [100, 1]);
+ * $db->executeQuery("UPDATE users SET balance = balance + ? WHERE id = ?", [100, 2]);
+ * $db->commitTransaction();
+ *
+ * // Query builder
+ * $qb = $db->queryBuilder();
+ * $results = $qb->table('users')->where('age', '>', 18)->get();
+ * ```
+ *
+ * @category  Database
+ * @package   Core\Model\Database
+ * @author    Suman Banerjee <contact@isumanbanerjee.com>
+ * @copyright 2025 Suman Banerjee. All rights reserved.
+ * @license   Proprietary
+ * @link      https://isumanbanerjee.com
+ * @since     1.0.0
+ */
 class Database
 {
+    /**
+     * PDO database connection instance
+     *
+     * @var PDO
+     */
     private PDO $pdo;
+
+    /**
+     * PDO replica database connection instance
+     *
+     * @var PDO|null
+     */
+    private ?PDO $replicaPdo = null;
+
+    /**
+     * Logger instance for database operation logging
+     *
+     * @var Logger
+     */
     private Logger $logger;
 
+    /**
+     * Initialize database connection with configuration
+     *
+     * Constructs a new Database instance, loads configuration, validates
+     * credentials, and establishes a persistent PDO connection with error
+     * handling and logging support.
+     *
+     * Connection process:
+     * 1. Loads configuration from compiled or .env file
+     * 2. Constructs DSN string based on database type
+     * 3. Validates required credentials
+     * 4. Establishes PDO connection with exception mode
+     * 5. Enables persistent connections for performance
+     *
+     * Configuration requirements:
+     * - DB_TYPE: Database type (mysql, pgsql, sqlsrv, etc.)
+     * - DB_HOST: Database server hostname
+     * - DB_PORT: Database server port
+     * - DB_NAME: Database name
+     * - DB_USERNAME: Database username
+     * - DB_PASSWORD: Database password
+     * - DB_CHARSET: Character set (optional, default: utf8)
+     *
+     * @param Logger $logger Logger instance for operation tracking
+     *
+     * @throws PDOException If connection fails
+     *
+     * @since 1.0.0
+     */
     public function __construct(Logger $logger)
     {
         $this->logger = $logger;
@@ -41,22 +176,51 @@ class Database
         try {
             $this->pdo = new PDO($dsn, $username, $password);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->pdo->setAttribute(PDO::ATTR_PERSISTENT, true); // Enable persistent connections
+            $this->pdo->setAttribute(PDO::ATTR_PERSISTENT, true);
         } catch (PDOException $e) {
             $this->logger->logError('Database connection failed: ' . $e->getMessage());
             $error->terminateWithError('DATABASE_CONNECTION_FAILED', $e->getMessage());
         }
     }
 
+    /**
+     * Load database configuration from App
+     *
+     * Loads configuration using the App configuration manager which
+     * handles compiled PHP or .env file loading automatically.
+     *
+     * @return array<string,mixed> Configuration key-value pairs
+     *
+     * @internal
+     * @since 1.0.0
+     */
     private function loadConfig(): array
     {
-        if (file_exists(__DIR__ . '/../../Configuration/config_compiled.php')) {
-            return include __DIR__ . '/../../Configuration/config_compiled.php';
-        } else {
-            return parse_ini_file(__DIR__ . '/../../Configuration/config.env');
-        }
+        return App::all();
     }
 
+    /**
+     * Construct database-specific DSN connection string
+     *
+     * Builds a PDO Data Source Name (DSN) based on database type and
+     * configuration. Supports multiple database systems with type-specific
+     * connection parameters and SSL/TLS encryption options.
+     *
+     * Supported database types:
+     * - mysql/mariadb: TCP or Unix socket connections
+     * - pgsql: PostgreSQL with SSL support
+     * - sqlsrv: Microsoft SQL Server with encryption
+     * - oci: Oracle database
+     * - ibm: IBM DB2
+     * - sqlite: File-based SQLite database
+     *
+     * @param array<string,mixed> $config Database configuration array
+     *
+     * @return string PDO DSN connection string
+     *
+     * @internal
+     * @since 1.0.0
+     */
     private function getDsn(array $config): string
     {
         $error = new Error();
@@ -93,9 +257,11 @@ class Database
             case 'mysql':
             case 'mariadb':
                 if (!empty($socket)) {
-                    $dsn = "$dbType:unix_socket=$socket;dbname=$dbName;charset=$charset";
+                    $dsn = "$dbType:unix_socket=$socket;dbname=$dbName;" .
+                           "charset=$charset";
                 } else {
-                    $dsn = "$dbType:host=$host;port=$port;dbname=$dbName;charset=$charset";
+                    $dsn = "$dbType:host=$host;port=$port;dbname=$dbName;" .
+                           "charset=$charset";
                 }
                 if ($useEncryption) {
                     $dsn .= ";ssl-key=$encryptionKey";
@@ -117,7 +283,8 @@ class Database
                 $dsn = "oci:dbname=//$host:$port/$dbName";
                 break;
             case 'ibm':
-                $dsn = "ibm:DRIVER={IBM DB2 ODBC DRIVER};DATABASE=$dbName;HOSTNAME=$host;PORT=$port;PROTOCOL=TCPIP;";
+                $dsn = "ibm:DRIVER={IBM DB2 ODBC DRIVER};DATABASE=$dbName;" .
+                       "HOSTNAME=$host;PORT=$port;PROTOCOL=TCPIP;";
                 break;
             case 'sqlite':
                 $dsn = "sqlite:" . $config['DB_PATH'];
@@ -129,17 +296,82 @@ class Database
         return $dsn;
     }
 
+    /**
+     * Retrieve the PDO connection instance
+     *
+     * Returns the underlying PDO object for advanced operations or
+     * direct PDO method access when needed.
+     *
+     * @return PDO Active PDO database connection
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * $pdo = $db->getPdo();
+     * $pdo->exec("SET time_zone = '+00:00'");
+     * ```
+     */
     public function getPdo(): PDO
     {
         return $this->pdo;
     }
 
+    /**
+     * Execute SQL query with parameters
+     *
+     * Executes a prepared SQL statement with optional parameter binding.
+     * Suitable for INSERT, UPDATE, DELETE operations. Returns execution
+     * success status.
+     *
+     * Uses prepared statements to prevent SQL injection. Parameters are
+     * automatically bound by PDO.
+     *
+     * @param string               $query  SQL query with placeholders (?, :name)
+     * @param array<int|string,mixed> $params Query parameters (positional or named)
+     *
+     * @return bool True if execution successful, false otherwise
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * // Positional parameters
+     * $db->executeQuery("INSERT INTO users (name, email) VALUES (?, ?)",
+     *                   ['John', 'john@example.com']);
+     *
+     * // Named parameters
+     * $db->executeQuery("UPDATE users SET name = :name WHERE id = :id",
+     *                   [':name' => 'Jane', ':id' => 5]);
+     * ```
+     */
     public function executeQuery(string $query, array $params = []): bool
     {
         $stmt = $this->pdo->prepare($query);
         return $stmt->execute($params);
     }
 
+    /**
+     * Fetch all rows from query result
+     *
+     * Executes a SELECT query and returns all matching rows as associative
+     * arrays. Each row is an associative array with column names as keys.
+     *
+     * @param string               $query  SQL SELECT query with placeholders
+     * @param array<int|string,mixed> $params Query parameters for binding
+     *
+     * @return array<int,array<string,mixed>> Array of associative arrays
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * $users = $db->fetchAll("SELECT * FROM users WHERE age > ?", [18]);
+     * foreach ($users as $user) {
+     *     echo $user['name'];
+     * }
+     * ```
+     */
     public function fetchAll(string $query, array $params = []): array
     {
         $stmt = $this->pdo->prepare($query);
@@ -147,6 +379,25 @@ class Database
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Fetch single row from query result
+     *
+     * Executes a SELECT query and returns the first matching row as an
+     * associative array. Returns empty array if no rows found.
+     *
+     * @param string               $query  SQL SELECT query with placeholders
+     * @param array<int|string,mixed> $params Query parameters for binding
+     *
+     * @return array<string,mixed> Associative array of column => value
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * $user = $db->fetchOne("SELECT * FROM users WHERE id = ?", [5]);
+     * echo $user['email'] ?? 'Not found';
+     * ```
+     */
     public function fetchOne(string $query, array $params = []): array
     {
         $stmt = $this->pdo->prepare($query);
@@ -154,26 +405,104 @@ class Database
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Close database connection
+     *
+     * Explicitly closes the PDO connection by setting it to null.
+     * Connection will be automatically closed when script ends.
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     */
     public function closeConnection(): void
     {
         $this->pdo = null;
     }
 
+    /**
+     * Begin database transaction
+     *
+     * Starts a new database transaction. Subsequent queries will be part
+     * of the transaction until commit or rollback is called.
+     *
+     * @return bool True if transaction started successfully
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * $db->beginTransaction();
+     * try {
+     *     $db->executeQuery("UPDATE...");
+     *     $db->executeQuery("INSERT...");
+     *     $db->commitTransaction();
+     * } catch (Exception $e) {
+     *     $db->rollBackTransaction();
+     * }
+     * ```
+     */
     public function beginTransaction(): bool
     {
         return $this->pdo->beginTransaction();
     }
 
+    /**
+     * Commit active transaction
+     *
+     * Commits all changes made during the current transaction, making
+     * them permanent in the database.
+     *
+     * @return bool True if commit successful
+     *
+     * @since 1.0.0
+     */
     public function commitTransaction(): bool
     {
         return $this->pdo->commit();
     }
 
+    /**
+     * Rollback active transaction
+     *
+     * Reverts all changes made during the current transaction, restoring
+     * database to state before transaction began.
+     *
+     * @return bool True if rollback successful
+     *
+     * @since 1.0.0
+     */
     public function rollBackTransaction(): bool
     {
         return $this->pdo->rollBack();
     }
 
+    /**
+     * Sanitize user input by type
+     *
+     * Filters and sanitizes input based on specified type using PHP's
+     * filter functions. Provides basic XSS and injection protection.
+     *
+     * Supported types:
+     * - string: Removes HTML tags and special characters
+     * - email: Removes invalid email characters
+     * - url: Removes invalid URL characters
+     * - int: Removes non-numeric characters except +/-
+     * - float: Removes non-numeric except decimal/+/-
+     *
+     * @param mixed  $input Input value to sanitize
+     * @param string $type  Sanitization type (string/email/url/int/float)
+     *
+     * @return mixed Sanitized value
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * $email = $db->sanitizeInput($_POST['email'], 'email');
+     * $age = $db->sanitizeInput($_POST['age'], 'int');
+     * ```
+     */
     public function sanitizeInput($input, string $type = 'string')
     {
         switch ($type) {
@@ -186,22 +515,39 @@ class Database
             case 'int':
                 return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
             case 'float':
-                return filter_var($input, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                return filter_var(
+                    $input,
+                    FILTER_SANITIZE_NUMBER_FLOAT,
+                    FILTER_FLAG_ALLOW_FRACTION
+                );
             default:
                 return $input;
         }
     }
 
+    /**
+     * Execute query asynchronously with emulated prepares
+     *
+     * Executes query with PDO emulated prepares enabled temporarily.
+     * Can improve performance for certain query types.
+     *
+     * @param string               $query  SQL query to execute
+     * @param array<int|string,mixed> $params Query parameters
+     *
+     * @return bool True if execution successful
+     *
+     * @since 1.0.0
+     */
     public function executeAsyncQuery(string $query, array $params = []): bool
-{
-    $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
-    $stmt = $this->pdo->prepare($query);
-    $result = $stmt->execute($params);
-    $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    return $result;
-}
+    {
+        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+        $stmt = $this->pdo->prepare($query);
+        $result = $stmt->execute($params);
+        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+        return $result;
+    }
 
-public function handleConnectionTimeout(): void
+    public function handleConnectionTimeout(): void
 {
     $config = $this->loadConfig();
     $timeout = $config['DB_CONNECTION_TIMEOUT'] ?? 5; // Default to 5 seconds if not set
@@ -687,8 +1033,6 @@ public function validateSchema(array $schema): bool
         $this->logger->logError("Schema validation failed: " . $e->getMessage());
         $error->terminateWithError('SCHEMA_VALIDATION_FAILED', $e->getMessage());
     }
-
-    return false;
 }
 
 public function cacheTableMetadata(string $table, CacheInterface $cache): array
@@ -717,8 +1061,6 @@ public function cacheTableMetadata(string $table, CacheInterface $cache): array
         $error = new Error();
         $error->terminateWithError('METADATA_CACHE_FAILED', $e->getMessage());
     }
-
-    return [];
 }
 
 public function executeQueryWithRetry(string $query, array $params = []): bool
@@ -774,8 +1116,6 @@ public function monitorServerStatus(): bool
         $error = new Error();
         $error->terminateWithError('SERVER_STATUS_CHECK_FAILED', $e->getMessage());
     }
-
-    return false;
 }
 
 public function manageServerLogs(string $logFilePath): bool
@@ -824,8 +1164,6 @@ public function manageServerLogs(string $logFilePath): bool
         $error = new Error();
         $error->terminateWithError('SERVER_LOG_MANAGEMENT_FAILED', $e->getMessage());
     }
-
-    return false;
 }
 
 public function manageServerBackups(string $backupDirectory): bool
@@ -858,8 +1196,6 @@ public function manageServerBackups(string $backupDirectory): bool
         $error = new Error();
         $error->terminateWithError('SERVER_BACKUP_FAILED', $e->getMessage());
     }
-
-    return false;
 }
 
 public function manageServerReplication(string $replicationConfigFile): bool
@@ -898,13 +1234,7 @@ public function manageServerReplication(string $replicationConfigFile): bool
         $error = new Error();
         $error->terminateWithError('SERVER_REPLICATION_FAILED', $e->getMessage());
     }
-
-    return false;
 }
-
-
-
-
 
 
 
