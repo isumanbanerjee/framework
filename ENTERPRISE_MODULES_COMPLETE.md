@@ -548,7 +548,7 @@ All modules are fully documented:
 
 ### System Requirements
 ```
-PHP: 8.4+
+PHP: 8.1+
 Extensions: curl, fileinfo, openssl, pdo, mbstring, json
 Optional: redis, memcached, apcu (for caching)
 Server: Apache/Nginx with mod_rewrite

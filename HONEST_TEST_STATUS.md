@@ -60,7 +60,7 @@ Reason: ini_set() fails in CLI environment
 
 **Problem:**
 - Session ini_set() cannot be called after headers
-- PHP 8.4 deprecates certain session settings
+- PHP deprecates certain session settings
 - CLI environment limitations
 
 #### 2. AuthTest.php - ❌ **FAILING**  
@@ -122,7 +122,7 @@ Pass Rate: ~55% (not 100% as claimed)
 **The Big Problem:**
 ```php
 // This fails in PHPUnit CLI:
-ini_set('session.use_only_cookies', '1');  // Deprecated in PHP 8.4
+ini_set('session.use_only_cookies', '1');  // May be deprecated
 ini_set('session.use_strict_mode', '1');   // Headers already sent
 ```
 

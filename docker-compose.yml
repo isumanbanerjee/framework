@@ -1,9 +1,9 @@
 services:
-  php-dev84:
+  php-dev81:
     build:
       context: .
       dockerfile_inline: |
-        FROM php:8.4-apache
+        FROM php:8.1-apache
         # Install system dependencies for GD, Intl, and Imagick
         RUN apt-get update && apt-get install -y \
             git unzip zip \

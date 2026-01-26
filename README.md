@@ -1,8 +1,8 @@
 # OmnioPHP
 
-**An enterprise-grade PHP 8.4 framework with 23 built-in components for building scalable, production-ready applications**
+**An enterprise-grade PHP 8.1+ framework with 23 built-in components for building scalable, production-ready applications**
 
-[![PHP Version](https://img.shields.io/badge/phil-8.4%2B-777BB4?style=flat&logo=php)](https://www.php.net/)
+[![PHP Version](https://img.shields.io/badge/php-8.1%2B-777BB4?style=flat&logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-188%20Total-brightgreen.svg)]()
 [![Coverage](https://img.shields.io/badge/Coverage-95%25-success.svg)]()
@@ -14,7 +14,7 @@
 
 ## 🎯 What is OmnioPHP?
 
-OmnioPHP is a comprehensive PHP framework that brings together **everything you need** to ship production applications—from caching and queues to templates, events, storage, and more. Built on PHP 8.4+, it combines the simplicity of lightweight frameworks with the power of enterprise-grade features.
+OmnioPHP is a comprehensive PHP framework that brings together **everything you need** to ship production applications—from caching and queues to templates, events, storage, and more. Built on PHP 8.1+, it combines the simplicity of lightweight frameworks with the power of enterprise-grade features.
 
 ### Why OmnioPHP?
 
@@ -83,7 +83,7 @@ OmnioPHP is a comprehensive PHP framework that brings together **everything you 
 ## 🔧 Requirements
 
 ### Minimum Requirements
-- **PHP 8.4 or higher**
+- **PHP 8.1 or higher**
 - **Composer** for dependency management
 - **Web Server** (Apache/Nginx) or PHP built-in server
 
@@ -1130,7 +1130,7 @@ Full-stack developer and framework architect
 - **Components**: 23 (10 core + 13 enterprise)
 - **Test Cases**: 188+
 - **Test Coverage**: 95%
-- **PHP Version**: 8.4+
+- **PHP Version**: 8.1+
 - **Documentation**: 2,000+ lines
 
 ---

@@ -19,6 +19,7 @@
     }
   },
   "require": {
+    "php": ">=8.1",
     "twbs/bootstrap": "v5.3.2",
     "twbs/bootstrap-icons": "v1.10.5",
     "components/jquery": "v3.7.1",
