@@ -330,5 +330,59 @@ class Response
         echo $html;
         exit;
     }
+
+    /**
+     * Build the default set of security headers
+     *
+     * Returns a hardened baseline of HTTP security headers as a
+     * name => value map. Kept as a pure method (no side effects) so the
+     * policy can be inspected and unit-tested without emitting headers.
+     *
+     * Included headers:
+     * - X-Frame-Options: Clickjacking protection
+     * - X-Content-Type-Options: Prevent MIME-type sniffing
+     * - Referrer-Policy: Limit referrer leakage
+     * - Content-Security-Policy: Restrict resource origins
+     * - Permissions-Policy: Disable sensitive browser features
+     *
+     * @return array<string,string> Header name => value pairs
+     *
+     * @since 1.0.0
+     */
+    public function securityHeaders(): array
+    {
+        return [
+            'X-Frame-Options' => 'SAMEORIGIN',
+            'X-Content-Type-Options' => 'nosniff',
+            'Referrer-Policy' => 'strict-origin-when-cross-origin',
+            'Content-Security-Policy' => "default-src 'self'",
+            'Permissions-Policy' => 'geolocation=(), microphone=()',
+        ];
+    }
+
+    /**
+     * Emit the default security headers to the client
+     *
+     * Applies every header returned by securityHeaders() via setHeader().
+     * Must be called before any output is sent.
+     *
+     * Example:
+     * ```php
+     * $response->sendSecurityHeaders();
+     * $response->json(['status' => 'ok']);
+     * ```
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     *
+     * @see securityHeaders()
+     */
+    public function sendSecurityHeaders(): void
+    {
+        foreach ($this->securityHeaders() as $key => $value) {
+            $this->setHeader($key, $value);
+        }
+    }
 }
 

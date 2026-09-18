@@ -563,4 +563,42 @@ class Validation
         }
         return true;
     }
+
+    /**
+     * Validate password strength
+     *
+     * Ensures the value meets a baseline password policy: at least 8
+     * characters and containing at least one lowercase letter, one uppercase
+     * letter, one digit, and one special character.
+     *
+     * Rule syntax:
+     * - strongPassword
+     *
+     * @param string $field  Field name being validated
+     * @param mixed  $value  Value to check for password strength
+     * @param array  $params Additional rule parameters (unused)
+     *
+     * @return bool True if password meets the policy, false otherwise
+     *
+     * @since 1.0.0
+     *
+     * @example
+     * ```php
+     * 'password' => 'required|strongPassword'
+     * ```
+     */
+    private function validateStrongPassword(string $field, mixed $value, array $params): bool
+    {
+        $pattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/';
+
+        if (!is_string($value) || !preg_match($pattern, $value)) {
+            $this->addError(
+                $field,
+                "The $field must be at least 8 characters and include uppercase, "
+                . "lowercase, a number, and a special character."
+            );
+            return false;
+        }
+        return true;
+    }
 }

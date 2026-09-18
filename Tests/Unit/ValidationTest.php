@@ -135,6 +135,45 @@ final class ValidationTest extends TestCase
         ));
     }
 
+    public function testStrongPasswordRejectsWeakPasswords(): void
+    {
+        // Missing uppercase
+        $v = $this->validation();
+        $this->assertFalse($v->make(['password' => 'lowercase1!'], ['password' => 'required|strongPassword']));
+
+        // Missing lowercase
+        $v = $this->validation();
+        $this->assertFalse($v->make(['password' => 'UPPERCASE1!'], ['password' => 'required|strongPassword']));
+
+        // Missing digit
+        $v = $this->validation();
+        $this->assertFalse($v->make(['password' => 'NoDigits!!'], ['password' => 'required|strongPassword']));
+
+        // Missing special character
+        $v = $this->validation();
+        $this->assertFalse($v->make(['password' => 'NoSpecial1'], ['password' => 'required|strongPassword']));
+
+        // Too short (7 chars)
+        $v = $this->validation();
+        $this->assertFalse($v->make(['password' => 'Ab1!xyz'], ['password' => 'required|strongPassword']));
+    }
+
+    public function testStrongPasswordAcceptsCompliantPassword(): void
+    {
+        $v = $this->validation();
+        $this->assertTrue($v->make(
+            ['password' => 'SecurePass123!'],
+            ['password' => 'required|strongPassword']
+        ));
+    }
+
+    public function testStrongPasswordErrorMessage(): void
+    {
+        $v = $this->validation();
+        $v->make(['password' => 'weak'], ['password' => 'required|strongPassword']);
+        $this->assertStringContainsString('at least 8 characters', $v->firstError('password'));
+    }
+
     public function testUnknownRuleThrowsInCliContext(): void
     {
         $this->expectException(\Exception::class);

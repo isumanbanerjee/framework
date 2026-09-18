@@ -4,8 +4,7 @@
 
 [![PHP Version](https://img.shields.io/badge/php-8.1%2B-777BB4?style=flat&logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-188%20Total-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/Coverage-95%25-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-72%20passing-brightgreen.svg)]()
 
 **Maintained by:** [AnteOmnio](https://www.anteomnio.com)  
 **Created by:** [Suman Banerjee](https://www.isumanbanerjee.com)
@@ -22,7 +21,7 @@ OmnioPHP is a comprehensive PHP framework that brings together **everything you 
 - **⚡ High Performance** - Multi-layer caching, queue system, optimized database access
 - **🔒 Security First** - CSRF, XSS protection, rate limiting, secure sessions
 - **📦 All-in-One** - No need to hunt for packages—it's already included
-- **🧪 100% Tested Core** - All critical components have full test coverage
+- **🧪 Tested Core** - Growing PHPUnit suite covering core components
 - **📚 Well Documented** - PHPDoc comments + extensive guides
 
 ---
@@ -919,32 +918,31 @@ $auth->login($email, $password);  // Uses password_verify()
 # Run all tests
 php resources/vendor/bin/phpunit
 
-# Run specific test
-php resources/vendor/bin/phpunit Tests/Unit/CacheTest.php
+# Run a specific test file
+php resources/vendor/bin/phpunit Tests/Unit/CollectionTest.php
 
 # With readable output
 php resources/vendor/bin/phpunit --testdox
 
-# Generate coverage
+# Generate coverage (requires Xdebug or PCOV)
 php resources/vendor/bin/phpunit --coverage-html coverage/
 ```
 
-### Test Statistics
+### Test Suite
 
 ```
-Total Tests: 188+
-Core Tests: 58/58 (100%) ✅
-Enterprise Tests: 130+ ✅
-Overall Coverage: 95%
+Total Tests: 72 passing
 
-Components:
-├─ Cache: 14 tests ✅
-├─ Template: 12 tests ✅
-├─ Collection: 35 tests ✅
-├─ Session: 11/11 ✅
-├─ Validation: 16/16 ✅
-└─ Database: 13/13 ✅
+Suites (Tests/Unit):
+├─ Collection ✅
+├─ Pagination ✅
+├─ Validation ✅
+├─ QueryBuilder (SQL compilation) ✅
+├─ QueryBuilder (SQLite integration) ✅
+└─ EnvFileParser ✅
 ```
+
+Tests run against the PHP 8.1 Docker environment (`docker compose exec php-dev81 php resources/vendor/bin/phpunit`). Coverage of the remaining components is a work in progress.
 
 ### Writing Tests
 

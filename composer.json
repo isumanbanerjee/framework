@@ -47,7 +47,10 @@
       "System\\Model\\": "System/Model",
       "System\\View\\": "System/View",
       "System\\Controller\\": "System/Controller"
-    }
+    },
+    "files": [
+      "Core/helpers.php"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
