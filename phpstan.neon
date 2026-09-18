@@ -10,3 +10,11 @@ parameters:
     excludePaths:
         - resources/vendor
     treatPhpDocTypesAsCertain: false
+    # Active Record models expose dynamic attributes via __get/__set.
+    universalObjectCratesClasses:
+        - Core\Model\Database\Model
+    ignoreErrors:
+        # new static() in the Model base is only ever called on concrete subclasses.
+        -
+            identifier: new.static
+            path: Core/Model/Database/Model.php
