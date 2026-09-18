@@ -8,5 +8,6 @@ resources/npm/
 resources/bower/
 
 .phpunit.cache/
+.php-cs-fixer.cache
 Configuration/*_compiled.php
 .idea/

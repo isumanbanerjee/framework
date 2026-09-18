@@ -252,6 +252,69 @@ class DatabaseServiceProvider extends ServiceProvider
 }
 ```
 
+### Migrations & Models
+
+Define schema changes with the fluent schema builder:
+
+```php
+use Core\Model\Database\{Migration, Schema, Blueprint};
+
+class CreateUsersTable extends Migration
+{
+    public function up(Schema $schema): void
+    {
+        $schema->create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->boolean('is_admin')->default(false);
+            $table->timestamps();
+        });
+    }
+
+    public function down(Schema $schema): void
+    {
+        $schema->dropIfExists('users');
+    }
+}
+```
+
+Work with records through the Active Record model:
+
+```php
+use Core\Model\Database\Model;
+
+class User extends Model
+{
+    protected array $fillable = ['email', 'password'];
+}
+
+Model::setConnection($pdo);
+
+$user = User::create(['email' => 'ada@example.com', 'password' => $hash]);
+$found = User::find($user->id);
+$found->email = 'ada.l@example.com';
+$found->save();
+
+$posts = $user->hasMany(Post::class, 'user_id');
+$author = $post->belongsTo(User::class, 'user_id');
+```
+
+### Notifications
+
+```php
+use Core\Model\{Notification, Notifier, DatabaseChannel};
+
+class WelcomeNotification extends Notification
+{
+    public function via($notifiable): array { return ['database']; }
+    public function toArray($notifiable): array { return ['message' => 'Welcome!']; }
+}
+
+$notifier = (new Notifier())->extend('database', new DatabaseChannel($pdo));
+$notifier->send($user, new WelcomeNotification());
+```
+
 ---
 
 ## 🏗️ Enterprise Modules
@@ -1027,6 +1090,15 @@ php console queue:work emails --timeout=60
 php console make:controller UserController
 php console make:model User
 php console make:middleware AdminMiddleware
+php console make:migration create_users_table
+
+# Migrations & Seeding
+php console migrate
+php console migrate:rollback
+php console db:seed "System\Model\UserSeeder"
+
+# Configuration
+php console config:cache
 
 # Development Server
 php console serve
