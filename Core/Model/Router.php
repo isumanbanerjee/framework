@@ -213,6 +213,41 @@ class Router
     }
 
     /**
+     * Register the seven conventional RESTful routes for a resource.
+     *
+     * Generates:
+     * - GET    /{name}            -> index
+     * - GET    /{name}/create     -> create
+     * - POST   /{name}            -> store
+     * - GET    /{name}/{id}       -> show
+     * - GET    /{name}/{id}/edit  -> edit
+     * - PUT    /{name}/{id}       -> update
+     * - DELETE /{name}/{id}       -> destroy
+     *
+     * The static "create" route is registered before the dynamic "{id}" route
+     * so it matches first.
+     *
+     * @param string $name       Resource path segment (e.g. "photos").
+     * @param string $controller Controller class name.
+     *
+     * @return array<int,Route>
+     */
+    public function resource(string $name, string $controller): array
+    {
+        $name = trim($name, '/');
+
+        return [
+            $this->get("/$name", [$controller, 'index']),
+            $this->get("/$name/create", [$controller, 'create']),
+            $this->post("/$name", [$controller, 'store']),
+            $this->get("/$name/{id}", [$controller, 'show']),
+            $this->get("/$name/{id}/edit", [$controller, 'edit']),
+            $this->put("/$name/{id}", [$controller, 'update']),
+            $this->delete("/$name/{id}", [$controller, 'destroy']),
+        ];
+    }
+
+    /**
      * Define a group of routes sharing a prefix and/or middleware.
      *
      * @param array{prefix?:string,middleware?:array<int,mixed>|string} $attributes Group attributes.
