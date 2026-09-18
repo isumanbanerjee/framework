@@ -2,3 +2,7 @@ Documentation/*
 !Documentation/README.md
 !Documentation/.gitkeep
 Resources/*
+resources/vendor/
+.phpunit.cache/
+Configuration/*_compiled.php
+.idea/

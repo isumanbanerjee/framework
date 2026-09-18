@@ -10,14 +10,18 @@ services:
             libpng-dev libjpeg-dev libfreetype6-dev \
             libicu-dev \
             libmagickwand-dev --no-install-recommends
-        
+
         # Install PHP extensions
         RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
             && docker-php-ext-install -j$(nproc) mysqli intl exif gd
-        
+
         # Install Imagick (requires pecl)
         RUN pecl install imagick && docker-php-ext-enable imagick
-        
+
+        # Enable mod_rewrite and allow .htaccess overrides for the router
+        RUN a2enmod rewrite \
+            && sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
+
         # Copy composer
         COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
     volumes:
