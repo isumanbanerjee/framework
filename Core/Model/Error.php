@@ -367,7 +367,7 @@ class Error
 		string $details = '',
 		string $severity = self::SEVERITY_ERROR,
 		array $context = []
-	): void {
+	): never {
 		$message = $this->getErrorMessage($code);
 		$statusCode = $this->getHttpStatusCode($code);
 

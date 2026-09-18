@@ -1,0 +1,169 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between array and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: Core/Model/App.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: Core/Model/Auth.php
+
+		-
+			message: '#^Property Core\\Model\\Database\\Database\:\:\$pdo \(PDO\) does not accept null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: Core/Model/Database/Database.php
+
+		-
+			message: '#^Attribute class JetBrains\\PhpStorm\\NoReturn does not exist\.$#'
+			identifier: attribute.notFound
+			count: 1
+			path: Core/Model/Error.php
+
+		-
+			message: '#^Binary operation "\-" between int\<1, max\> and array\<string, int\> results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 2
+			path: Core/Model/Error.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function set_error_handler expects \(callable\(int, string, string, int\)\: bool\)\|null, Closure\(mixed, mixed, mixed, mixed\)\: void given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Core/Model/Error.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between array and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: Core/Model/Error.php
+
+		-
+			message: '#^Property Core\\Model\\Http\:\:\$options is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: Core/Model/Http.php
+
+		-
+			message: '#^Parameter \#1 \$db of class Core\\Model\\Auth constructor expects Core\\Model\\Database\\Database, null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: Core/Model/Middleware.php
+
+		-
+			message: '#^Property Core\\Model\\Middleware\:\:\$middleware is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: Core/Model/Middleware.php
+
+		-
+			message: '#^Call to method beginTransaction\(\) on an unknown class Core\\Model\\Database\.$#'
+			identifier: class.notFound
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Call to method commitTransaction\(\) on an unknown class Core\\Model\\Database\.$#'
+			identifier: class.notFound
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Call to method executeQuery\(\) on an unknown class Core\\Model\\Database\.$#'
+			identifier: class.notFound
+			count: 5
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Call to method fetchOne\(\) on an unknown class Core\\Model\\Database\.$#'
+			identifier: class.notFound
+			count: 2
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Call to method getPdo\(\) on an unknown class Core\\Model\\Database\.$#'
+			identifier: class.notFound
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Call to method rollbackTransaction\(\) on an unknown class Core\\Model\\Database\.$#'
+			identifier: class.notFound
+			count: 2
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Instantiated class Core\\Model\\Database not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Method Core\\Model\\Queue\:\:pushRaw\(\) should return int\|string but returns null\.$#'
+			identifier: return.type
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Property Core\\Model\\Queue\:\:\$cache \(Core\\Model\\Cache\|null\) is never assigned null so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Property Core\\Model\\Queue\:\:\$db \(Core\\Model\\Database\|null\) is never assigned null so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Property Core\\Model\\Queue\:\:\$db has unknown class Core\\Model\\Database as its type\.$#'
+			identifier: class.notFound
+			count: 2
+			path: Core/Model/Queue.php
+
+		-
+			message: '#^Property Core\\Model\\Request\:\:\$cookies is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: Core/Model/Request.php
+
+		-
+			message: '#^Variable \$_COOKIE on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: Core/Model/Request.php
+
+		-
+			message: '#^Variable \$_FILES on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: Core/Model/Request.php
+
+		-
+			message: '#^Variable \$_GET on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: Core/Model/Request.php
+
+		-
+			message: '#^Variable \$_POST on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: Core/Model/Request.php
+
+		-
+			message: '#^Variable \$_SERVER on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: Core/Model/Request.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: Core/Model/Session.php

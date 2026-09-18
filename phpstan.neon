@@ -1,0 +1,12 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - Core
+        - Tests
+        - index.php
+    excludePaths:
+        - resources/vendor
+    treatPhpDocTypesAsCertain: false

@@ -372,7 +372,8 @@ class QueryBuilder
      * shorthand where('col', value) which defaults to equality comparison.
      *
      * @param string $column   Column name
-     * @param string $operator Comparison operator or value if 2 args
+     * @param mixed  $operator Comparison operator, or the value when using
+     *                         the two-argument shorthand
      * @param mixed  $value    Value to compare (optional if operator is value)
      * @param string $boolean  Logical operator (AND/OR)
      *
@@ -384,6 +385,7 @@ class QueryBuilder
      * ```php
      * $qb->where('age', '>', 18);
      * $qb->where('status', 'active'); // Defaults to =
+     * $qb->where('id', 1);            // Non-string shorthand value
      * $qb->where('price', '<=', 100);
      * ```
      */
