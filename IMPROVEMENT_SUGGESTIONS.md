@@ -2,7 +2,6 @@
 
 **Analysis Date:** January 28, 2026  
 **Framework Version:** 1.0.0  
-**Analyzed By:** GitHub Copilot
 
 ---
 
