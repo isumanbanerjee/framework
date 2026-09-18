@@ -219,6 +219,12 @@ class Middleware
         $normalized = [];
 
         foreach ($middleware as $item) {
+            // Callables (closures / invokables) pass straight through.
+            if (!is_string($item)) {
+                $normalized[] = $item;
+                continue;
+            }
+
             // Check if it's a group
             if (isset($this->groups[$item])) {
                 $normalized = array_merge($normalized, $this->normalizeMiddleware($this->groups[$item]));
