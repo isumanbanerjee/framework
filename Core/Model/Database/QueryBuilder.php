@@ -389,7 +389,7 @@ class QueryBuilder
      */
     public function where(
         string $column,
-        string $operator,
+        mixed $operator,
         mixed $value = null,
         string $boolean = 'AND'
     ): self
@@ -399,25 +399,25 @@ class QueryBuilder
 			$value = $operator;
 			$operator = '=';
 		}
-		
+
 		$this->wheres[] = [
 			'type' => 'Basic',
 			'column' => $column,
-			'operator' => $operator,
+			'operator' => (string) $operator,
 			'boolean' => $boolean
 		];
 		$this->bindings['where'][] = $value;
-		
+
 		return $this;
 	}
-	
-	public function orWhere(string $column, string $operator, mixed $value = null): self
+
+	public function orWhere(string $column, mixed $operator, mixed $value = null): self
 	{
 		if (func_num_args() === 2) {
 			$value = $operator;
 			$operator = '=';
 		}
-		return $this->where($column, $operator, $value, 'OR');
+		return $this->where($column, (string) $operator, $value, 'OR');
 	}
 	
 	public function whereIn(string $column, array $values, string $boolean = 'AND', bool $not = false): self
