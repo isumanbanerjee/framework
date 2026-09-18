@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace System\Controller;
+
+use Core\Model\Request;
+use Core\Model\Response;
+
+class {{name}}
+{
+    public function index(Request $request, Response $response)
+    {
+        return $response->json(['message' => '{{name}}@index']);
+    }
+}

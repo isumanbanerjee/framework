@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace System\Middleware;
+
+use Closure;
+use Core\Model\Request;
+use Core\Model\Response;
+
+class {{name}}
+{
+    public function handle(Request $request, Response $response, Closure $next)
+    {
+        // Perform actions before the request is handled.
+
+        return $next($request, $response);
+    }
+}

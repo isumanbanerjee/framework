@@ -1,8 +1,12 @@
 Documentation/*
 !Documentation/README.md
 !Documentation/.gitkeep
-Resources/*
+
+# Composer / asset-installer output (source dirs under resources/ are tracked)
 resources/vendor/
+resources/npm/
+resources/bower/
+
 .phpunit.cache/
 Configuration/*_compiled.php
 .idea/
