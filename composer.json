@@ -34,7 +34,8 @@
     "ext-curl": "*",
     "ext-fileinfo": "*",
     "ext-openssl": "*",
-    "ext-pdo": "*"
+    "ext-pdo": "*",
+    "psr/container": "^2.0"
   },
   "autoload": {
     "psr-4": {

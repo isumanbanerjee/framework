@@ -208,6 +208,50 @@ $storage = new Storage();
 $path = $storage->putFile('avatar', 'users/avatars');
 ```
 
+### Dependency Injection Container
+
+A PSR-11 compliant container with autowiring. Register services explicitly,
+or let the container resolve constructor dependencies automatically.
+
+```php
+use Core\Model\Container;
+
+$container = new Container();
+
+// Transient binding (fresh value each resolve)
+$container->bind('uuid', fn() => \Ramsey\Uuid\Uuid::uuid4()->toString());
+
+// Shared singleton
+$container->singleton(Logger::class, fn() => new Logger());
+
+// Pre-built instance
+$container->instance('config', $configArray);
+
+// Autowiring — constructor dependencies resolved recursively, no registration needed
+$service = $container->get(UserService::class);
+```
+
+Group related bindings in a service provider:
+
+```php
+use Core\Model\ServiceProvider;
+
+class DatabaseServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->container->singleton(Database::class, fn($c) =>
+            new Database($c->get(Logger::class), $c->get(Error::class))
+        );
+    }
+
+    public function boot(): void
+    {
+        // runs after all providers are registered
+    }
+}
+```
+
 ---
 
 ## 🏗️ Enterprise Modules
