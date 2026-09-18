@@ -30,6 +30,12 @@ class Console
             'queue:work' => [QueueCommand::class, 'work'],
             'make:controller' => [MakeCommand::class, 'controller'],
             'make:model' => [MakeCommand::class, 'model'],
+            'make:middleware' => [MakeCommand::class, 'middleware'],
+            'make:migration' => [MakeCommand::class, 'migration'],
+            'migrate' => [MigrateCommand::class, 'run'],
+            'migrate:rollback' => [MigrateCommand::class, 'rollback'],
+            'db:seed' => [SeedCommand::class, 'seed'],
+            'config:cache' => [ConfigCacheCommand::class, 'cache'],
             'serve' => [ServerCommand::class, 'serve'],
         ];
     }
@@ -137,6 +143,27 @@ class QueueCommand
 
 class MakeCommand
 {
+    private const BASE = __DIR__ . '/../..';
+    private const STUBS = self::BASE . '/resources/stubs';
+
+    private function generator(): StubGenerator
+    {
+        return new StubGenerator(self::STUBS);
+    }
+
+    private function write(string $relativePath, string $content): void
+    {
+        $path = self::BASE . '/' . ltrim($relativePath, '/');
+        $dir = dirname($path);
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        file_put_contents($path, $content);
+        (new Console())->info("Created: {$relativePath}");
+    }
+
     public function controller($args): void
     {
         $name = $args[0] ?? null;
@@ -144,9 +171,9 @@ class MakeCommand
             (new Console())->error("Controller name required");
             return;
         }
-        $content = "<?php\n\nnamespace System\Controller;\n\nclass {$name}\n{\n    public function index()\n    {\n        // Your code here\n    }\n}\n";
-        file_put_contents("System/Controller/{$name}.php", $content);
-        (new Console())->info("Controller created: {$name}");
+
+        $content = $this->generator()->render('controller', ['name' => $name]);
+        $this->write("System/Controller/{$name}.php", $content);
     }
 
     public function model($args): void
@@ -156,9 +183,126 @@ class MakeCommand
             (new Console())->error("Model name required");
             return;
         }
-        $content = "<?php\n\nnamespace System\Model;\n\nclass {$name}\n{\n    // Your model code here\n}\n";
-        file_put_contents("System/Model/{$name}.php", $content);
-        (new Console())->info("Model created: {$name}");
+
+        $table = strtolower($name) . 's';
+        $content = $this->generator()->render('model', ['name' => $name, 'table' => $table]);
+        $this->write("System/Model/{$name}.php", $content);
+    }
+
+    public function middleware($args): void
+    {
+        $name = $args[0] ?? null;
+        if (!$name) {
+            (new Console())->error("Middleware name required");
+            return;
+        }
+
+        $content = $this->generator()->render('middleware', ['name' => $name]);
+        $this->write("System/Middleware/{$name}.php", $content);
+    }
+
+    public function migration($args): void
+    {
+        $name = $args[0] ?? null;
+        if (!$name) {
+            (new Console())->error("Migration name required (e.g. create_users_table)");
+            return;
+        }
+
+        $timestamp = date('Y_m_d_His');
+        $fileName = StubGenerator::migrationFileName($name, $timestamp);
+        $className = StubGenerator::studly($name);
+
+        // Best-effort table name inference: create_users_table -> users
+        $table = preg_replace('/^create_|_table$/', '', $name) ?: 'table_name';
+
+        $content = $this->generator()->render('migration', [
+            'name' => $className,
+            'table' => $table,
+        ]);
+
+        $this->write("database/migrations/{$fileName}.php", $content);
+    }
+}
+
+class MigrateCommand
+{
+    private function migrator(): \Core\Model\Database\Migrator
+    {
+        $pdo = \Core\Model\Database\Connection::make(App::all());
+        return new \Core\Model\Database\Migrator($pdo, __DIR__ . '/../../database/migrations');
+    }
+
+    public function run(): void
+    {
+        $console = new Console();
+        $ran = $this->migrator()->run();
+
+        if (empty($ran)) {
+            $console->line('Nothing to migrate.');
+            return;
+        }
+
+        foreach ($ran as $migration) {
+            $console->info("Migrated: {$migration}");
+        }
+    }
+
+    public function rollback(): void
+    {
+        $console = new Console();
+        $rolledBack = $this->migrator()->rollback();
+
+        if (empty($rolledBack)) {
+            $console->line('Nothing to roll back.');
+            return;
+        }
+
+        foreach ($rolledBack as $migration) {
+            $console->info("Rolled back: {$migration}");
+        }
+    }
+}
+
+class SeedCommand
+{
+    public function seed($args): void
+    {
+        $console = new Console();
+        $class = $args[0] ?? null;
+
+        if (!$class) {
+            $console->error('Seeder class required (e.g. System\\Model\\UserSeeder)');
+            return;
+        }
+
+        if (!class_exists($class)) {
+            $console->error("Seeder class not found: {$class}");
+            return;
+        }
+
+        $pdo = \Core\Model\Database\Connection::make(App::all());
+        $seeder = new $class($pdo);
+        $seeder->run();
+
+        $console->info("Seeded: {$class}");
+    }
+}
+
+class ConfigCacheCommand
+{
+    public function cache(): void
+    {
+        $console = new Console();
+        $config = App::all();
+
+        $path = __DIR__ . '/../../Configuration/config_compiled.php';
+        $content = '<?php' . PHP_EOL . PHP_EOL
+            . '// Auto-generated config cache. Do not edit.' . PHP_EOL
+            . 'return ' . var_export($config, true) . ';' . PHP_EOL;
+
+        file_put_contents($path, $content);
+        $console->info('Configuration cached.');
     }
 }
 
