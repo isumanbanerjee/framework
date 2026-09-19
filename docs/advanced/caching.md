@@ -65,3 +65,17 @@ $cache->putMany(['key1' => 'val1', 'key2' => 'val2'], 3600);
 - **Route/template caching** — templates are compiled and cached to disk automatically by `Core\Model\Template` (see [Views](../fundamentals/views.md)).
 
 For OPcache and other server-level performance tuning, see [Performance Tuning](../performance.md).
+
+## HTTP response caching (ETag / 304)
+
+`Core\Model\Response` can opt in to ETag-based conditional responses on `json()`, `text()`, and `html()`. When enabled, the response body is hashed into a weak identity `ETag` header; if the client's `If-None-Match` request header matches, the server replies `304 Not Modified` with an empty body instead of resending the payload:
+
+```php
+$response->withEtag()->json($data);
+```
+
+Notes:
+
+- Opt-in only — `withEtag(false)` (the default) skips hashing entirely, since computing an `ETag` for every response has a real cost that not every route should pay.
+- Only applies to `200` responses; redirects and error statuses are left untouched, since conditional revalidation is only meaningful for a successful, cacheable payload.
+- The comparison honors `*`, comma-separated lists, and weak (`W/`) validators per the `If-None-Match` spec.

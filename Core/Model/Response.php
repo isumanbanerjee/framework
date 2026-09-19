@@ -70,6 +70,13 @@ use JsonException;
 class Response
 {
     /**
+     * Whether ETag/If-None-Match support is enabled for this response.
+     *
+     * @var bool
+     */
+    private bool $etagEnabled = false;
+
+    /**
      * Set the HTTP response status code
      *
      * Changes the HTTP status code for the current response. Common codes include:
@@ -201,17 +208,13 @@ class Response
     public function json(mixed $data, int $statusCode = 200): void
     {
         try {
-            $this->setStatusCode($statusCode);
-            $this->setHeader('Content-Type', 'application/json; charset=utf-8');
-
             $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
 
             if ($json === false) {
                 throw new Exception('Failed to encode JSON: ' . json_last_error_msg());
             }
 
-            echo $json;
-            exit;
+            $this->sendBody($json, 'application/json; charset=utf-8', $statusCode);
         } catch (JsonException $e) {
             $error = new Error();
             $error->terminateWithError(
@@ -287,10 +290,7 @@ class Response
      */
     public function text(string $text, int $statusCode = 200): void
     {
-        $this->setStatusCode($statusCode);
-        $this->setHeader('Content-Type', 'text/plain; charset=utf-8');
-        echo $text;
-        exit;
+        $this->sendBody($text, 'text/plain; charset=utf-8', $statusCode);
     }
 
     /**
@@ -324,10 +324,7 @@ class Response
      */
     public function html(string $html, int $statusCode = 200): void
     {
-        $this->setStatusCode($statusCode);
-        $this->setHeader('Content-Type', 'text/html; charset=utf-8');
-        echo DebugBar::inject($html, $statusCode);
-        exit;
+        $this->sendBody(DebugBar::inject($html, $statusCode), 'text/html; charset=utf-8', $statusCode);
     }
 
     /**
@@ -382,5 +379,122 @@ class Response
         foreach ($this->securityHeaders() as $key => $value) {
             $this->setHeader($key, $value);
         }
+    }
+
+    /**
+     * Enable or disable ETag/If-None-Match support for this response.
+     *
+     * When enabled, json()/html()/text() compute an ETag from the response
+     * body, send it as a header, and short-circuit with a bodyless 304 Not
+     * Modified when the client's If-None-Match header already matches —
+     * disabled by default since hashing every response body has a cost not
+     * every route wants to pay.
+     *
+     * Example:
+     * ```php
+     * $response->withEtag()->json($data);
+     * ```
+     *
+     * @param bool $enabled Whether to enable ETag support (default: true)
+     *
+     * @return self
+     *
+     * @since 1.0.0
+     */
+    public function withEtag(bool $enabled = true): self
+    {
+        $this->etagEnabled = $enabled;
+
+        return $this;
+    }
+
+    /**
+     * Compute a strong ETag for a response body.
+     *
+     * Pure and side-effect-free so it can be unit tested without needing to
+     * simulate a full HTTP response cycle.
+     *
+     * @param string $body Response body to hash.
+     *
+     * @return string Quoted ETag value, e.g. `"5d41402abc4b2a76b9719d911017c592"`.
+     *
+     * @since 1.0.0
+     */
+    public function computeEtag(string $body): string
+    {
+        return '"' . md5($body) . '"';
+    }
+
+    /**
+     * Whether the client's If-None-Match header already matches the given
+     * ETag, per RFC 7232 §3.2 (supports "*", comma-separated lists, and
+     * weak "W/" validators).
+     *
+     * Pure and side-effect-free: reads $_SERVER directly rather than
+     * requiring a Request instance, so it can be unit tested by setting
+     * $_SERVER['HTTP_IF_NONE_MATCH'] directly.
+     *
+     * @param string $etag The ETag computed for the current response body.
+     *
+     * @return bool
+     *
+     * @since 1.0.0
+     */
+    public function ifNoneMatchSatisfiedBy(string $etag): bool
+    {
+        $header = $_SERVER['HTTP_IF_NONE_MATCH'] ?? null;
+
+        if ($header === null || $header === '') {
+            return false;
+        }
+
+        if (trim($header) === '*') {
+            return true;
+        }
+
+        foreach (explode(',', $header) as $candidate) {
+            $candidate = preg_replace('/^W\//', '', trim($candidate));
+
+            if ($candidate === $etag) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Send a response body with its Content-Type header, applying ETag
+     * negotiation when enabled, and terminate execution.
+     *
+     * Only 200 responses participate in ETag negotiation — a 304 in
+     * response to a redirect or error status code would be meaningless.
+     *
+     * @param string $body       Response body.
+     * @param string $contentType Content-Type header value.
+     * @param int    $statusCode  HTTP status code.
+     *
+     * @return void This method terminates script execution
+     *
+     * @internal
+     * @since 1.0.0
+     */
+    private function sendBody(string $body, string $contentType, int $statusCode): void
+    {
+        $this->setHeader('Content-Type', $contentType);
+
+        if ($this->etagEnabled && $statusCode === 200) {
+            $etag = $this->computeEtag($body);
+            $this->setHeader('ETag', $etag);
+
+            if ($this->ifNoneMatchSatisfiedBy($etag)) {
+                $this->setStatusCode(304);
+                exit;
+            }
+        }
+
+        $this->setStatusCode($statusCode);
+        echo $body;
+        exit;
     }
 }

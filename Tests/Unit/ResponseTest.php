@@ -34,4 +34,83 @@ final class ResponseTest extends TestCase
         $response = new Response();
         $this->assertSame($response->securityHeaders(), $response->securityHeaders());
     }
+
+    public function testComputeEtagIsAQuotedMd5Hash(): void
+    {
+        $etag = (new Response())->computeEtag('hello world');
+
+        $this->assertSame('"' . md5('hello world') . '"', $etag);
+    }
+
+    public function testComputeEtagIsStableForTheSameBody(): void
+    {
+        $response = new Response();
+        $this->assertSame($response->computeEtag('same'), $response->computeEtag('same'));
+    }
+
+    public function testComputeEtagDiffersForDifferentBodies(): void
+    {
+        $response = new Response();
+        $this->assertNotSame($response->computeEtag('a'), $response->computeEtag('b'));
+    }
+
+    public function testIfNoneMatchSatisfiedByReturnsFalseWhenHeaderAbsent(): void
+    {
+        unset($_SERVER['HTTP_IF_NONE_MATCH']);
+
+        $this->assertFalse((new Response())->ifNoneMatchSatisfiedBy('"abc"'));
+    }
+
+    public function testIfNoneMatchSatisfiedByReturnsTrueOnExactMatch(): void
+    {
+        $_SERVER['HTTP_IF_NONE_MATCH'] = '"abc"';
+
+        $this->assertTrue((new Response())->ifNoneMatchSatisfiedBy('"abc"'));
+
+        unset($_SERVER['HTTP_IF_NONE_MATCH']);
+    }
+
+    public function testIfNoneMatchSatisfiedByReturnsFalseOnMismatch(): void
+    {
+        $_SERVER['HTTP_IF_NONE_MATCH'] = '"xyz"';
+
+        $this->assertFalse((new Response())->ifNoneMatchSatisfiedBy('"abc"'));
+
+        unset($_SERVER['HTTP_IF_NONE_MATCH']);
+    }
+
+    public function testIfNoneMatchSatisfiedByHandlesWildcard(): void
+    {
+        $_SERVER['HTTP_IF_NONE_MATCH'] = '*';
+
+        $this->assertTrue((new Response())->ifNoneMatchSatisfiedBy('"anything"'));
+
+        unset($_SERVER['HTTP_IF_NONE_MATCH']);
+    }
+
+    public function testIfNoneMatchSatisfiedByHandlesCommaSeparatedList(): void
+    {
+        $_SERVER['HTTP_IF_NONE_MATCH'] = '"one", "two", "three"';
+
+        $this->assertTrue((new Response())->ifNoneMatchSatisfiedBy('"two"'));
+
+        unset($_SERVER['HTTP_IF_NONE_MATCH']);
+    }
+
+    public function testIfNoneMatchSatisfiedByStripsWeakValidatorPrefix(): void
+    {
+        $_SERVER['HTTP_IF_NONE_MATCH'] = 'W/"abc"';
+
+        $this->assertTrue((new Response())->ifNoneMatchSatisfiedBy('"abc"'));
+
+        unset($_SERVER['HTTP_IF_NONE_MATCH']);
+    }
+
+    public function testWithEtagReturnsSelfForChaining(): void
+    {
+        $response = new Response();
+
+        $this->assertSame($response, $response->withEtag());
+        $this->assertSame($response, $response->withEtag(false));
+    }
 }
