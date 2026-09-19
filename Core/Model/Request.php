@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace Core\Model;
 
-use Core\Model\Error;
 use Exception;
 
 /**
@@ -227,8 +226,8 @@ class Request
     public function getUrl(): string
     {
         $protocol = (isset($this->server['HTTPS']) && $this->server['HTTPS'] === 'on')
-            ? "https"
-            : "http";
+            ? 'https'
+            : 'http';
         $host = $this->server['HTTP_HOST'] ?? 'localhost';
         $uri = $this->server['REQUEST_URI'] ?? '/';
 
@@ -459,5 +458,46 @@ class Request
         }
         return $this->server['REMOTE_ADDR'] ?? '0.0.0.0';
     }
-}
 
+    /**
+     * Apply a transformer to every scalar value in the GET and POST data
+     *
+     * Recurses into nested arrays and replaces each non-array value with
+     * the result of calling $transformer on it. Used by SanitizeMiddleware
+     * to trim strings and convert empty strings to null across all input,
+     * without touching non-string values (ints, bools, uploaded files, etc.).
+     *
+     * @param callable $transformer Callback invoked as $transformer(mixed $value): mixed
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     */
+    public function transformInput(callable $transformer): void
+    {
+        $this->get = $this->mapInputRecursive($this->get, $transformer);
+        $this->post = $this->mapInputRecursive($this->post, $transformer);
+    }
+
+    /**
+     * Recursively apply a transformer to every non-array value in an array
+     *
+     * @param array    $data        Input array to transform
+     * @param callable $transformer Callback invoked as $transformer(mixed $value): mixed
+     *
+     * @return array Transformed array with the same structure
+     *
+     * @internal
+     * @since 1.0.0
+     */
+    private function mapInputRecursive(array $data, callable $transformer): array
+    {
+        foreach ($data as $key => $value) {
+            $data[$key] = is_array($value)
+                ? $this->mapInputRecursive($value, $transformer)
+                : $transformer($value);
+        }
+
+        return $data;
+    }
+}

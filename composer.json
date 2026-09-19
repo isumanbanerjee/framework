@@ -49,6 +49,9 @@
       "System\\View\\": "System/View",
       "System\\Controller\\": "System/Controller"
     },
+    "classmap": [
+      "Core/Model/Middleware.php"
+    ],
     "files": [
       "Core/helpers.php"
     ]

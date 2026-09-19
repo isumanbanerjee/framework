@@ -2,8 +2,8 @@
 
 namespace Core\Model;
 
-use Exception;
 use Closure;
+use Exception;
 
 /**
  * Enterprise Middleware System
@@ -96,13 +96,13 @@ class Middleware
             'throttle' => ThrottleMiddleware::class,
             'admin' => AdminMiddleware::class,
             'json' => JsonMiddleware::class,
-            'log' => LogMiddleware::class
+            'log' => LogMiddleware::class,
         ];
 
         $this->groups = [
             'web' => ['csrf', 'log'],
             'api' => ['throttle', 'json', 'cors', 'log'],
-            'admin' => ['auth', 'admin', 'csrf', 'log']
+            'admin' => ['auth', 'admin', 'csrf', 'log'],
         ];
     }
 
@@ -117,7 +117,7 @@ class Middleware
     {
         $this->middleware[] = [
             'handler' => $middleware,
-            'priority' => $priority
+            'priority' => $priority,
         ];
 
         return $this;
@@ -388,6 +388,34 @@ class ThrottleMiddleware
 }
 
 /**
+ * Input Sanitization Middleware
+ *
+ * Trims leading/trailing whitespace from every string value in the
+ * request's GET/POST input, and converts empty strings to null so
+ * downstream validation (e.g. "required" checks) sees null rather than
+ * an empty string. Mirrors Laravel's TrimStrings + ConvertEmptyStringsToNull
+ * middleware pair. Runs before controllers/validation, not instead of
+ * Request::input()'s per-call htmlspecialchars() escaping.
+ */
+class SanitizeMiddleware
+{
+    public function handle(Request $request, Response $response, Closure $next)
+    {
+        $request->transformInput(static function (mixed $value) {
+            if (!is_string($value)) {
+                return $value;
+            }
+
+            $trimmed = trim($value);
+
+            return $trimmed === '' ? null : $trimmed;
+        });
+
+        return $next($request, $response);
+    }
+}
+
+/**
  * Admin Middleware
  */
 class AdminMiddleware
@@ -436,10 +464,9 @@ class LogMiddleware
         $logger->logInfo('Request', [
             'method' => $request->getMethod(),
             'path' => $request->getPath(),
-            'ip' => $request->ip()
+            'ip' => $request->ip(),
         ]);
 
         return $next($request, $response);
     }
 }
-

@@ -75,4 +75,20 @@ Scaffold a new middleware class:
 php console make:middleware LocaleMiddleware
 ```
 
+## Input sanitization
+
+`Core\Model\SanitizeMiddleware` trims leading/trailing whitespace from every
+string in the request's GET/POST input, and converts empty strings to `null`
+(mirroring Laravel's `TrimStrings` + `ConvertEmptyStringsToNull` pair). It's
+not aliased or grouped by default — opt in per app:
+
+```php
+$middleware->alias('sanitize', \Core\Model\SanitizeMiddleware::class);
+$middleware->group('web', ['sanitize', 'csrf', 'log']);
+```
+
+This runs before controllers/validation and is independent of
+`Request::input()`'s own per-call `htmlspecialchars()` escaping — sanitize
+normalizes raw input structure, `input()` still escapes for safe HTML output.
+
 See also: [Routing](../fundamentals/routing.md).
