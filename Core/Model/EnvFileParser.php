@@ -96,7 +96,7 @@ class EnvFileParser
      *
      * @since 1.0.0
      */
-    private function parseEnvFile(string $filePath): array
+    public function parse(string $filePath): array
     {
         $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $config = [];
@@ -109,7 +109,7 @@ class EnvFileParser
 
             // Split line into key and value at first = sign
             list($key, $value) = explode('=', $line, 2);
-            
+
             // Trim whitespace and quotes from both key and value
             $config[trim($key)] = trim($value, " \t\n\r\0\x0B'\"");
         }
@@ -142,7 +142,7 @@ class EnvFileParser
      *
      * @since 1.0.0
      *
-     * @see parseEnvFile() For the parsing logic
+     * @see parse() For the parsing logic
      */
     public function processEnvFiles(): void
     {
@@ -150,16 +150,16 @@ class EnvFileParser
 
         if (empty($envFiles)) {
             trigger_error(
-                "No environment files found in directory: " . $this->envDirectory,
+                'No environment files found in directory: ' . $this->envDirectory,
                 E_USER_WARNING
             );
             return;
         }
 
         foreach ($envFiles as $envFile) {
-            error_log("Processing environment file: " . $envFile);
+            error_log('Processing environment file: ' . $envFile);
 
-            $config = $this->parseEnvFile($envFile);
+            $config = $this->parse($envFile);
 
             $compiledFilePath = $this->envDirectory . '/'
                 . pathinfo($envFile, PATHINFO_FILENAME)
@@ -182,12 +182,11 @@ class EnvFileParser
                     . 'return ' . var_export($config, true) . ';' . PHP_EOL;
 
                 file_put_contents($compiledFilePath, $content);
-                
-                error_log("Compiled file created: " . $compiledFilePath);
+
+                error_log('Compiled file created: ' . $compiledFilePath);
             } else {
-                error_log("Compiled file already exists, skipping: " . $compiledFilePath);
+                error_log('Compiled file already exists, skipping: ' . $compiledFilePath);
             }
         }
     }
 }
-

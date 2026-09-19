@@ -192,10 +192,11 @@ class App
         if (file_exists($compiledFile)) {
             $this->config = include $compiledFile;
         } elseif (file_exists($envFile)) {
-            $this->config = parse_ini_file($envFile);
-            if ($this->config === false) {
+            try {
+                $this->config = (new EnvFileParser(dirname($envFile)))->parse($envFile);
+            } catch (\Throwable $e) {
                 $this->config = [];
-                error_log('Failed to parse config.env file');
+                error_log('Failed to parse config.env file: ' . $e->getMessage());
             }
         } else {
             $this->config = [];
@@ -223,7 +224,6 @@ class App
      */
     public function __wakeup()
     {
-        throw new \Exception("Cannot unserialize singleton");
+        throw new \Exception('Cannot unserialize singleton');
     }
 }
-

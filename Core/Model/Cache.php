@@ -3,8 +3,8 @@
 namespace Core\Model;
 
 use Exception;
-use Redis;
 use Memcached;
+use Redis;
 
 /**
  * Enterprise Cache System
@@ -73,7 +73,20 @@ class Cache
         'hits' => 0,
         'misses' => 0,
         'writes' => 0,
-        'deletes' => 0
+        'deletes' => 0,
+    ];
+
+    /**
+     * Cache statistics aggregated across every Cache instance created
+     * during the request lifecycle, used by the debug toolbar.
+     *
+     * @var array
+     */
+    private static array $globalStats = [
+        'hits' => 0,
+        'misses' => 0,
+        'writes' => 0,
+        'deletes' => 0,
     ];
 
     /**
@@ -251,13 +264,16 @@ class Cache
 
             if ($value === false || $value === null) {
                 $this->stats['misses']++;
+                self::$globalStats['misses']++;
                 return $default;
             }
 
             $this->stats['hits']++;
+            self::$globalStats['hits']++;
             return $this->unserialize($value);
         } catch (Exception $e) {
             $this->stats['misses']++;
+            self::$globalStats['misses']++;
             return $default;
         }
     }
@@ -298,6 +314,7 @@ class Cache
 
             if ($result) {
                 $this->stats['writes']++;
+                self::$globalStats['writes']++;
             }
 
             return $result;
@@ -384,6 +401,7 @@ class Cache
 
             if ($result) {
                 $this->stats['deletes']++;
+                self::$globalStats['deletes']++;
             }
 
             return $result;
@@ -558,6 +576,35 @@ class Cache
     }
 
     /**
+     * Get cache statistics aggregated across every Cache instance created
+     * during the request lifecycle.
+     *
+     * @return array
+     */
+    public static function getGlobalStats(): array
+    {
+        return self::$globalStats;
+    }
+
+    /**
+     * Reset the aggregated global statistics.
+     *
+     * Intended for test isolation between requests/test cases; does not
+     * affect any individual Cache instance's own stats.
+     *
+     * @return void
+     */
+    public static function resetGlobalStats(): void
+    {
+        self::$globalStats = [
+            'hits' => 0,
+            'misses' => 0,
+            'writes' => 0,
+            'deletes' => 0,
+        ];
+    }
+
+    /**
      * Get from file cache
      *
      * @param string $key
@@ -605,7 +652,7 @@ class Cache
 
         $data = [
             'value' => $value,
-            'expires_at' => $ttl > 0 ? time() + $ttl : 0
+            'expires_at' => $ttl > 0 ? time() + $ttl : 0,
         ];
 
         return file_put_contents($file, json_encode($data), LOCK_EX) !== false;
@@ -696,4 +743,3 @@ class Cache
         }
     }
 }
-

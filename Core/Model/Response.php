@@ -21,9 +21,8 @@ declare(strict_types=1);
 
 namespace Core\Model;
 
-use JsonException;
-use Core\Model\Error;
 use Exception;
+use JsonException;
 
 /**
  * HTTP Response Class
@@ -204,13 +203,13 @@ class Response
         try {
             $this->setStatusCode($statusCode);
             $this->setHeader('Content-Type', 'application/json; charset=utf-8');
-            
+
             $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
-            
+
             if ($json === false) {
                 throw new Exception('Failed to encode JSON: ' . json_last_error_msg());
             }
-            
+
             echo $json;
             exit;
         } catch (JsonException $e) {
@@ -327,7 +326,7 @@ class Response
     {
         $this->setStatusCode($statusCode);
         $this->setHeader('Content-Type', 'text/html; charset=utf-8');
-        echo $html;
+        echo DebugBar::inject($html, $statusCode);
         exit;
     }
 
@@ -385,4 +384,3 @@ class Response
         }
     }
 }
-

@@ -19,6 +19,7 @@ This directory holds the long-form guides that complement the [top-level README]
 
 - [Middleware](advanced/middleware.md)
 - [Caching](advanced/caching.md)
+- [Debug Toolbar](advanced/debug-toolbar.md)
 
 ## Operations
 
