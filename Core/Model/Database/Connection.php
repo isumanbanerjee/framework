@@ -28,7 +28,14 @@ use PDO;
 /**
  * Connection Class
  *
- * Supports sqlite, mysql/mariadb, and pgsql DSNs.
+ * Supports sqlite, mysql/mariadb, and pgsql DSNs. Pools PDO instances
+ * in-process, keyed by DSN + username, and marks each underlying connection
+ * as a PDO persistent connection (`PDO::ATTR_PERSISTENT`) so PHP's SAPI can
+ * additionally reuse the OS-level connection across requests where the
+ * runtime supports it (e.g. PHP-FPM workers). Together these avoid the cost
+ * of re-authenticating a new connection every time something in the same
+ * process (console commands, migrations, seeders) asks for the same
+ * database.
  *
  * @category  Database
  * @package   Core\Model\Database
@@ -38,6 +45,13 @@ use PDO;
  */
 class Connection
 {
+    /**
+     * In-process pool of PDO connections, keyed by DSN + username.
+     *
+     * @var array<string,PDO>
+     */
+    private static array $pool = [];
+
     /**
      * Build a DSN string from configuration.
      *
@@ -77,7 +91,10 @@ class Connection
     }
 
     /**
-     * Create a PDO connection from configuration.
+     * Get a pooled PDO connection for the given configuration, creating and
+     * caching one on first use. Subsequent calls with an equivalent DSN and
+     * username return the same PDO instance instead of opening a new
+     * connection.
      *
      * @param array<string,mixed> $config Configuration with DB_* keys.
      *
@@ -88,10 +105,39 @@ class Connection
         $dsn = self::dsn($config);
         $username = $config['DB_USERNAME'] ?? null;
         $password = $config['DB_PASSWORD'] ?? null;
+        $key = $dsn . '|' . ($username ?? '');
 
-        $pdo = new PDO($dsn, $username, $password);
+        if (isset(self::$pool[$key])) {
+            return self::$pool[$key];
+        }
+
+        $pdo = new PDO($dsn, $username, $password, [PDO::ATTR_PERSISTENT => true]);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+        self::$pool[$key] = $pdo;
+
         return $pdo;
+    }
+
+    /**
+     * Number of distinct connections currently held in the pool.
+     *
+     * @return int
+     */
+    public static function poolSize(): int
+    {
+        return count(self::$pool);
+    }
+
+    /**
+     * Clear the connection pool, releasing PHP's references to every pooled
+     * PDO instance. Mainly useful for test isolation and long-running
+     * processes (queue workers) that want to force reconnection.
+     *
+     * @return void
+     */
+    public static function resetPool(): void
+    {
+        self::$pool = [];
     }
 }
