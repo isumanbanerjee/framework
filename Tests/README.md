@@ -1,6 +1,6 @@
 # Test Suite
 
-Two testsuites are registered in `phpunit.xml`, both run by default via `php resources/vendor/bin/phpunit` (or `composer test`).
+Three testsuites are registered in `phpunit.xml`, all run by default via `php resources/vendor/bin/phpunit` (or `composer test`).
 
 ## `Tests/Unit`
 
@@ -27,6 +27,10 @@ $payload = json_decode($response->body, true, 512, JSON_THROW_ON_ERROR);
 ```
 
 Built-in middleware that constructs real dependencies internally (`AuthMiddleware`/`AdminMiddleware` via `new Session()`/`new Auth()`, `ThrottleMiddleware` via `new Cache('file')`) is easiest to exercise in a feature test by writing an equivalent closure or lightweight test-only middleware class instead of the real alias — that keeps the test focused on the router/middleware/controller *wiring*, not on faking sessions or the filesystem.
+
+## `Tests/Integration`
+
+Exercises a component against a real external engine instead of a mock or in-process double — e.g. `QueryBuilderIntegrationTest` runs the query builder against a real `sqlite::memory:` PDO connection rather than asserting on generated SQL strings. Use this instead of `Tests/Unit` when a test's value comes from actually round-tripping through the real engine (catching SQL dialect mistakes, type coercion, etc.), not just from exercising the class's code paths.
 
 ## Superglobals
 

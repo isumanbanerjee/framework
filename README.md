@@ -1039,12 +1039,13 @@ php resources/vendor/bin/phpunit --coverage-html coverage/
 
 ### Test Suite
 
-Two testsuites are registered in `phpunit.xml`:
+Three testsuites are registered in `phpunit.xml`:
 
-- **Unit** (`Tests/Unit`) — covers collections, pagination, validation, the query builder (SQL compilation and SQLite integration), env parsing, the DI container, router/middleware/resource routing in isolation, migrations (blueprint/schema/migrator/seeder), the Active Record model, notifications, and helper functions.
+- **Unit** (`Tests/Unit`) — covers collections, pagination, validation, query builder SQL compilation, env parsing, the DI container, router/middleware/resource routing in isolation, migrations (blueprint/schema/migrator/seeder), the Active Record model, notifications, and helper functions.
 - **Feature** (`Tests/Feature`) — end-to-end workflow tests that exercise `Router`, `Middleware`, `Request`, and a controller-style callback together as a single request lifecycle, rather than each component in isolation. See [Tests/README.md](Tests/README.md) for how these are written.
+- **Integration** (`Tests/Integration`) — tests that exercise a component against a real external engine instead of a mock, e.g. the query builder against a real in-memory SQLite connection.
 
-Run `composer test` for the current count, or target a single suite with `php resources/vendor/bin/phpunit --testsuite Unit` / `--testsuite Feature`.
+Run `composer test` for the current count, or target a single suite with `php resources/vendor/bin/phpunit --testsuite Unit` / `--testsuite Feature` / `--testsuite Integration`.
 
 Tests run against the PHP 8.1 Docker environment (`docker compose exec php-dev81 php resources/vendor/bin/phpunit`). Coverage of the remaining components is a work in progress.
 
