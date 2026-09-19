@@ -1039,7 +1039,12 @@ php resources/vendor/bin/phpunit --coverage-html coverage/
 
 ### Test Suite
 
-The suite covers collections, pagination, validation, the query builder (SQL compilation and SQLite integration), env parsing, the DI container, router/middleware/resource routing, migrations (blueprint/schema/migrator/seeder), the Active Record model, notifications, and helper functions — run `composer test` for the current count.
+Two testsuites are registered in `phpunit.xml`:
+
+- **Unit** (`Tests/Unit`) — covers collections, pagination, validation, the query builder (SQL compilation and SQLite integration), env parsing, the DI container, router/middleware/resource routing in isolation, migrations (blueprint/schema/migrator/seeder), the Active Record model, notifications, and helper functions.
+- **Feature** (`Tests/Feature`) — end-to-end workflow tests that exercise `Router`, `Middleware`, `Request`, and a controller-style callback together as a single request lifecycle, rather than each component in isolation. See [Tests/README.md](Tests/README.md) for how these are written.
+
+Run `composer test` for the current count, or target a single suite with `php resources/vendor/bin/phpunit --testsuite Unit` / `--testsuite Feature`.
 
 Tests run against the PHP 8.1 Docker environment (`docker compose exec php-dev81 php resources/vendor/bin/phpunit`). Coverage of the remaining components is a work in progress.
 
