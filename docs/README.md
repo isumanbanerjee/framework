@@ -1,0 +1,28 @@
+# OmnioPHP Documentation
+
+This directory holds the long-form guides that complement the [top-level README](../README.md). The README stays the fast-start reference; these guides go deeper on individual subsystems.
+
+## Getting Started
+
+- [Installation](getting-started/installation.md)
+- [Configuration](getting-started/configuration.md)
+- [Your First Application](getting-started/first-application.md)
+
+## Fundamentals
+
+- [Routing](fundamentals/routing.md)
+- [Controllers](fundamentals/controllers.md)
+- [Models](fundamentals/models.md)
+- [Views & Templates](fundamentals/views.md)
+
+## Advanced
+
+- [Middleware](advanced/middleware.md)
+- [Caching](advanced/caching.md)
+
+## Operations
+
+- [Performance Tuning](performance.md)
+- [Logging Strategy](logging-strategy.md)
+
+For contribution guidelines, see [CONTRIBUTING.md](../CONTRIBUTING.md). For security reporting, see [SECURITY.md](../SECURITY.md).

@@ -1,0 +1,15 @@
+.git
+.gitignore
+resources/vendor
+resources/npm
+resources/bower
+.phpunit.cache
+.php-cs-fixer.cache
+phpunit.xml
+phpstan.neon
+phpstan-baseline.neon
+Tests
+docs
+*.md
+.idea
+Configuration/*_compiled.php
