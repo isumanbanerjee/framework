@@ -61,11 +61,35 @@ namespace Core\Model;
 class Logger
 {
     /**
+     * Numeric severity ranking for each supported log level, lowest first.
+     *
+     * @var array<string,int>
+     */
+    private const LEVELS = [
+        'DEBUG' => 0,
+        'INFO' => 1,
+        'WARNING' => 2,
+        'ERROR' => 3,
+        'CRITICAL' => 4,
+    ];
+
+    /**
      * The absolute path to the log file
      *
      * @var string
      */
     private string $logFile;
+
+    /**
+     * Minimum severity level that will be written to the log file.
+     *
+     * Entries below this level are silently discarded. Loaded from the
+     * LOG_LEVEL configuration setting; defaults to DEBUG (log everything)
+     * when unset.
+     *
+     * @var int
+     */
+    private int $minLevel;
 
     /**
      * The datetime format string used for log timestamps
@@ -113,6 +137,54 @@ class Logger
         $this->maxFileSize = $maxFileSize;
         $this->ensureDirectoryExists();
         $this->loadDateTimeFormat();
+        $this->loadMinLevel();
+    }
+
+    /**
+     * Override the minimum log level at runtime.
+     *
+     * @param string $level One of DEBUG, INFO, WARNING, ERROR, CRITICAL (case-insensitive).
+     *
+     * @return self
+     *
+     * @since 1.0.0
+     */
+    public function setMinLevel(string $level): self
+    {
+        $normalized = strtoupper($level);
+
+        if (isset(self::LEVELS[$normalized])) {
+            $this->minLevel = self::LEVELS[$normalized];
+        }
+
+        return $this;
+    }
+
+    /**
+     * Load the minimum log level from configuration
+     *
+     * Attempts to load the LOG_LEVEL setting from the compiled configuration
+     * file. Falls back to DEBUG (log everything) if configuration is missing,
+     * doesn't contain the setting, or the value isn't a recognized level.
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     */
+    private function loadMinLevel(): void
+    {
+        $this->minLevel = self::LEVELS['DEBUG'];
+
+        $configFile = __DIR__ . '/../../Configuration/config_compiled.php';
+        if (file_exists($configFile)) {
+            $config = include $configFile;
+            if (isset($config['LOG_LEVEL'])) {
+                $normalized = strtoupper((string) $config['LOG_LEVEL']);
+                if (isset(self::LEVELS[$normalized])) {
+                    $this->minLevel = self::LEVELS[$normalized];
+                }
+            }
+        }
     }
 
     /**
@@ -210,6 +282,67 @@ class Logger
     }
 
     /**
+     * Log a debug message with optional context
+     *
+     * Writes a DEBUG level log entry, the lowest severity. Intended for
+     * verbose, development-time diagnostics that are typically filtered
+     * out in staging/production via the LOG_LEVEL configuration setting.
+     *
+     * @param string               $message The debug message to log
+     * @param array<string,mixed> $context Optional contextual information
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     *
+     * @see log() For the underlying logging mechanism
+     */
+    public function logDebug(string $message, array $context = []): void
+    {
+        $this->log('DEBUG', $message, $context);
+    }
+
+    /**
+     * Log a warning message with optional context
+     *
+     * Writes a WARNING level log entry — for conditions that are not
+     * errors but are worth investigating.
+     *
+     * @param string               $message The warning message to log
+     * @param array<string,mixed> $context Optional contextual information
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     *
+     * @see log() For the underlying logging mechanism
+     */
+    public function logWarning(string $message, array $context = []): void
+    {
+        $this->log('WARNING', $message, $context);
+    }
+
+    /**
+     * Log a critical message with optional context
+     *
+     * Writes a CRITICAL level log entry, the highest severity — for
+     * conditions requiring immediate attention (e.g. service outages).
+     *
+     * @param string               $message The critical message to log
+     * @param array<string,mixed> $context Optional contextual information
+     *
+     * @return void
+     *
+     * @since 1.0.0
+     *
+     * @see log() For the underlying logging mechanism
+     */
+    public function logCritical(string $message, array $context = []): void
+    {
+        $this->log('CRITICAL', $message, $context);
+    }
+
+    /**
      * Write a log entry to the log file
      *
      * Core logging method that handles the actual writing of log entries.
@@ -233,6 +366,10 @@ class Logger
      */
     private function log(string $level, string $message, array $context = []): void
     {
+        if ((self::LEVELS[$level] ?? 0) < $this->minLevel) {
+            return;
+        }
+
         $this->rotateLogIfNeeded();
 
         $date = date($this->dateTimeFormat);
@@ -296,4 +433,3 @@ class Logger
         }
     }
 }
-

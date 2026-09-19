@@ -1,25 +1,50 @@
 # Logging Strategy
 
-`Core\Model\Logger` writes timestamped, leveled log lines with JSON context. It currently exposes two methods — `logInfo()` and `logError()` — which is enough to cover the practical dev/staging/production split described below.
+`Core\Model\Logger` writes timestamped, leveled log lines with JSON context. It exposes five level methods — `logDebug()`, `logInfo()`, `logWarning()`, `logError()`, and `logCritical()` — covering the practical dev/staging/production split described below.
 
 ```php
 use Core\Model\Logger;
 
 $logger = new Logger();
 
+$logger->logDebug('Cache miss', ['key' => 'users:active']);
 $logger->logInfo('User registered', ['user_id' => $user->id]);
+$logger->logWarning('Slow query', ['duration_ms' => 850]);
 $logger->logError('Payment failed', ['order_id' => $order->id, 'reason' => $e->getMessage()]);
+$logger->logCritical('Database unreachable', ['host' => $host]);
 ```
 
 Output format: `[YYYY-MM-DD HH:MM:SS] [LEVEL] Message {"context":"data"}`.
 
+## Level filtering
+
+Severity ranks lowest to highest as `DEBUG < INFO < WARNING < ERROR < CRITICAL`. The `LOG_LEVEL` configuration setting (`Configuration/config.env`) sets the minimum level that actually gets written — entries below it are silently discarded, including skipping the rotation check and file write entirely:
+
+```env
+LOG_LEVEL=info
+```
+
+```php
+$logger = new Logger();
+$logger->logDebug('never written when LOG_LEVEL=info');
+$logger->logInfo('written');
+```
+
+Override it at runtime (e.g. in tests, or to temporarily raise verbosity) with `setMinLevel()`:
+
+```php
+$logger->setMinLevel('debug'); // case-insensitive
+```
+
+With no `LOG_LEVEL` set, the default is `DEBUG` — every level is logged, matching the logger's pre-filtering behavior.
+
 ## Recommended levels per environment
 
-| Environment | What to log | Rationale |
-|---|---|---|
-| **Development** (`APP_ENV=development`, `APP_DEBUG=true`) | Both `logInfo()` and `logError()` liberally, including request-level breadcrumbs | Maximum visibility while iterating locally; noise is cheap |
-| **Staging** | `logInfo()` for key lifecycle events (auth, payments, job runs) + all `logError()` calls | Enough signal to reproduce staging-only bugs without drowning in output |
-| **Production** (`APP_ENV=production`, `APP_DEBUG=false`) | `logError()` for failures/exceptions; `logInfo()` only for events with audit or business value (e.g. "order placed") | Keeps log volume and storage cost proportional to what's actionable |
+| Environment | `LOG_LEVEL` | What gets written | Rationale |
+|---|---|---|---|
+| **Development** (`APP_ENV=development`, `APP_DEBUG=true`) | `debug` | Everything, including request-level breadcrumbs | Maximum visibility while iterating locally; noise is cheap |
+| **Staging** | `info` | Lifecycle events (auth, payments, job runs) plus all warnings/errors/critical | Enough signal to reproduce staging-only bugs without drowning in output |
+| **Production** (`APP_ENV=production`, `APP_DEBUG=false`) | `warning` or `error` | Failures/exceptions and above; routine info-level noise dropped | Keeps log volume and storage cost proportional to what's actionable |
 
 ## Practical guidance
 
