@@ -306,7 +306,7 @@ class Template
     private function compileSections(string $content): string
     {
         $content = preg_replace('/@section\s*\(\s*[\'"](.+?)[\'"]\s*\)/', '<?php $__sections[\'$1\'] = ob_start(); ?>', $content);
-        $content = preg_replace('/@endsection/', '<?php $__sections[end(array_keys($__sections))] = ob_get_clean(); ?>', $content);
+        $content = preg_replace('/@endsection/', '<?php $__sections[array_key_last($__sections)] = ob_get_clean(); ?>', $content);
 
         return $content;
     }
@@ -473,7 +473,7 @@ class Template
     private function evaluate(string $path, array $data): string
     {
         extract($data, EXTR_SKIP);
-        $__sections = [];
+        $__sections = $__sections ?? [];
 
         ob_start();
 
@@ -482,6 +482,7 @@ class Template
 
             // Handle template inheritance
             if (isset($__extends)) {
+                ob_end_clean();
                 return $this->render($__extends, array_merge($data, ['__sections' => $__sections]));
             }
 
@@ -513,4 +514,3 @@ class Template
         return true;
     }
 }
-
