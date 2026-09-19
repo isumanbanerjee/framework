@@ -31,12 +31,6 @@ parameters:
 			path: Core/Model/Error.php
 
 		-
-			message: '#^Strict comparison using \=\=\= between array and false will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: Core/Model/Error.php
-
-		-
 			message: '#^Property Core\\Model\\Http\:\:\$options is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
