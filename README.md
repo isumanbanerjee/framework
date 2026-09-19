@@ -39,6 +39,7 @@ OmnioPHP is a comprehensive PHP framework that brings together **everything you 
 - [Testing](#-testing)
 - [CLI Tools](#-cli-tools)
 - [Documentation](#-documentation)
+- [Tutorial](docs/tutorial/README.md)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -1122,6 +1123,14 @@ $console->register('db:seed', function($args, $options) use ($console, $db) {
 ---
 
 ## 📖 Documentation
+
+### Tutorial
+
+New to OmnioPHP? [**Build a Task Tracker**](docs/tutorial/README.md) is a step-by-step walkthrough of one app — routing, migrations/models, validation, views, auth/middleware, and tests — built up one part at a time.
+
+### Guides
+
+Longer-form guides on individual subsystems live under [`docs/`](docs/README.md): [Routing](docs/fundamentals/routing.md), [Controllers](docs/fundamentals/controllers.md), [Models](docs/fundamentals/models.md), [Views](docs/fundamentals/views.md), [Middleware](docs/advanced/middleware.md), [Caching](docs/advanced/caching.md), and more — see the [docs index](docs/README.md) for the full list.
 
 ### API Documentation
 

@@ -1,6 +1,7 @@
 Documentation/*
 !Documentation/README.md
 !Documentation/.gitkeep
+.phpdoc/
 
 # Composer / asset-installer output (source dirs under resources/ are tracked)
 resources/vendor/

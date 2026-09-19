@@ -8,6 +8,12 @@ This directory holds the long-form guides that complement the [top-level README]
 - [Configuration](getting-started/configuration.md)
 - [Your First Application](getting-started/first-application.md)
 
+## Tutorial
+
+A full step-by-step walkthrough building one application — a login-gated task tracker — across routing, models, validation, views, auth/middleware, and tests.
+
+- [Tutorial: Build a Task Tracker](tutorial/README.md)
+
 ## Fundamentals
 
 - [Routing](fundamentals/routing.md)
