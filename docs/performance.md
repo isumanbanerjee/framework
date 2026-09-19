@@ -35,10 +35,19 @@ over `config.env` when present. Re-run it after changing configuration.
 
 ## Autoloader Optimization
 
-Generate an optimized, class-map authoritative autoloader for production:
+`optimize-autoloader: true` is set in `composer.json`'s `config` block, so
+every `composer install`/`composer dump-autoload` — including local dev —
+generates a class-map autoloader instead of relying on PSR-4 rule scanning
+at runtime.
+
+For production builds, add `--classmap-authoritative` (already applied in
+the `Dockerfile`) so the autoloader trusts the compiled class map completely
+and skips the filesystem fallback lookup for classes it doesn't find —
+faster, and safe here since every class the app loads is covered by the
+`psr-4`/`classmap` entries in `composer.json`:
 
 ```bash
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --optimize-autoloader --classmap-authoritative
 ```
 
 ## Database Connection Pooling

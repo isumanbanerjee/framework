@@ -10,7 +10,8 @@
     }
   ],
   "config": {
-    "vendor-dir": "resources/vendor"
+    "vendor-dir": "resources/vendor",
+    "optimize-autoloader": true
   },
   "extra": {
     "asset-installer-paths": {

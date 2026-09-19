@@ -18,6 +18,7 @@ RUN composer install \
     --no-scripts \
     --no-interaction \
     --optimize-autoloader \
+    --classmap-authoritative \
     --ignore-platform-reqs
 
 FROM php:8.1-apache AS production
