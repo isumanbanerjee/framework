@@ -22,6 +22,7 @@ This directory holds the long-form guides that complement the [top-level README]
 - [Debug Toolbar](advanced/debug-toolbar.md)
 - [API Documentation (OpenAPI)](advanced/api-documentation.md)
 - [Monitoring & APM Integration](advanced/monitoring.md)
+- [Asset Pipeline (Vite)](advanced/asset-pipeline.md)
 
 ## Operations
 
