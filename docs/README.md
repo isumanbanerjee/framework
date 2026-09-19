@@ -23,6 +23,7 @@ This directory holds the long-form guides that complement the [top-level README]
 - [API Documentation (OpenAPI)](advanced/api-documentation.md)
 - [Monitoring & APM Integration](advanced/monitoring.md)
 - [Asset Pipeline (Vite)](advanced/asset-pipeline.md)
+- [Notifications](advanced/notifications.md)
 
 ## Operations
 

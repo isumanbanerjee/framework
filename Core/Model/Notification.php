@@ -79,4 +79,16 @@ abstract class Notification
     {
         return [];
     }
+
+    /**
+     * Slack representation (message payload used by the Slack channel).
+     *
+     * @param mixed $notifiable The entity being notified.
+     *
+     * @return array<string,mixed>
+     */
+    public function toSlack(mixed $notifiable): array
+    {
+        return [];
+    }
 }
