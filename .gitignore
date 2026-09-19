@@ -13,6 +13,7 @@ assets/build/
 
 .phpunit.cache/
 .php-cs-fixer.cache
+logs/
 Configuration/*_compiled.php
 Configuration/config.env.development
 Configuration/config.env.staging

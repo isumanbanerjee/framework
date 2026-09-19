@@ -12,7 +12,7 @@ Exercises a full request lifecycle: real `Router` + `Middleware` pipeline + a co
 
 ### Why feature tests need a `Response` test double
 
-`Core\Model\Response::json()`/`html()`/`text()`/`redirect()` all end by calling `exit` (see `Response::sendBody()`), and several built-in middleware classes (`AuthMiddleware`, `CsrfMiddleware`, `ThrottleMiddleware`, `AdminMiddleware`, `CorsMiddleware`) call one of those methods and then `exit` again on the failure path. That's correct for a real HTTP response, but it would kill the PHPUnit process mid-suite.
+`Core\Model\Response::json()`/`html()`/`text()`/`redirect()` all end by calling `exit` (see `Response::sendBody()`), and several built-in middleware classes (`AuthMiddleware`, `CsrfMiddleware`, `ThrottleMiddleware`, `AdminMiddleware`, `CorsMiddleware`) call one of those methods on the failure path. That's correct for a real HTTP response, but it would kill the PHPUnit process mid-suite.
 
 `Tests/Feature/RouterMiddlewareFlowTest.php` defines a `RecordingResponse extends Response` that overrides `setStatusCode()`, `setHeader()`, `json()`, and `redirect()` to record the would-be status code/headers/body onto public properties instead of calling `header()`/`echo`/`exit`. Pass a `RecordingResponse` instead of a real `Response` when a feature test's route or middleware might call a terminating method, then assert against its `statusCode`/`headers`/`body` properties instead of capturing real HTTP output.
 

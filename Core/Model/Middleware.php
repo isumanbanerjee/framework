@@ -327,9 +327,13 @@ class CsrfMiddleware
             $token = $request->input('csrf_token');
 
             if (!$session->validateCsrfToken($token)) {
-                $response->setStatusCode(419);
-                $response->json(['error' => 'CSRF token mismatch'], 419);
-                exit;
+                // 419 (Laravel's convention) isn't a real IANA status code and
+                // Apache's mod_php forces it to 500 on the wire even though PHP
+                // reports 419 internally - 403 is the closest standard code and
+                // is handled correctly by every server.
+                $response->json(['error' => 'CSRF token mismatch'], 403);
+
+                return null;
             }
         }
 

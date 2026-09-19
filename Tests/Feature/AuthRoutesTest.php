@@ -13,14 +13,11 @@ use PHPUnit\Framework\TestCase;
  * End-to-end coverage for routes/web.php: real Router + "csrf" middleware +
  * AuthController, wired exactly as index.php wires them.
  *
- * Only the DB-free branches are exercised here (rendering the forms, and
- * the pure-validation early returns in AuthController::login()/register()).
- * The success paths (Auth::login()/register() against a real users table)
- * need a live database and are out of scope for this in-process suite -
- * see Tests/README.md for why real Response/terminating middleware can't
- * be driven end-to-end without one (CsrfMiddleware's rejection branch
- * calls a bare `exit`, not a mockable Response method, so it also isn't
- * exercised here).
+ * Only the DB-free branches are exercised here (rendering the forms, the
+ * pure-validation early returns in AuthController::login()/register(), and
+ * CsrfMiddleware's rejection branch). The success paths (Auth::login()/
+ * register() against a real users table) need a live database and are
+ * covered separately in Tests/Integration/AuthIntegrationTest.php.
  */
 final class AuthRoutesTest extends TestCase
 {
@@ -121,5 +118,18 @@ final class AuthRoutesTest extends TestCase
         $this->assertSame(302, $response->statusCode);
         $this->assertSame('/register', $response->headers['Location']);
         $this->assertSame('Password confirmation does not match.', (new Session())->getFlash('error'));
+    }
+
+    public function testPostLoginWithInvalidCsrfTokenIsRejectedWith403(): void
+    {
+        (new Session())->generateCsrfToken();
+        $_POST = ['email' => 'ada@example.com', 'password' => 'secret123', 'csrf_token' => 'not-the-real-token'];
+
+        [$router, $response] = $this->router('POST', '/login');
+        $router->resolve();
+
+        $this->assertSame(403, $response->statusCode);
+        $payload = json_decode($response->body, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('CSRF token mismatch', $payload['error']);
     }
 }
