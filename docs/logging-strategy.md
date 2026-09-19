@@ -59,4 +59,4 @@ The logger writes to a configurable file path with a configurable size threshold
 
 ## External aggregation
 
-For centralized log search across multiple instances, ship the log file with a standard collector (Filebeat, Fluent Bit, Vector, etc.) into your log platform of choice. The framework does not bundle a specific integration — see the note on monitoring in [IMPROVEMENT_SUGGESTIONS.md](../IMPROVEMENT_SUGGESTIONS.md) (§10.5) for why that's left as an infrastructure decision rather than a hard dependency.
+For centralized log search across multiple instances, ship the log file with a standard collector (Filebeat, Fluent Bit, Vector, etc.) into your log platform of choice. The framework does not bundle a specific integration, keeping this an infrastructure decision rather than a hard dependency — see [Monitoring & APM Integration](advanced/monitoring.md) for the hooks it does provide.
