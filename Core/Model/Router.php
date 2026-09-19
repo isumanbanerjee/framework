@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace Core\Model;
 
-use Core\Model\Error;
 use Exception;
 
 /**
@@ -329,6 +328,88 @@ class Router
     public function getRoutes(): array
     {
         return $this->routes;
+    }
+
+    /**
+     * Build a plain-array, var_export()-safe representation of every
+     * cacheable route, for use by the `route:cache` console command.
+     *
+     * Routes whose action or middleware include a Closure are skipped
+     * (Closures cannot be serialized via var_export()) — their count is
+     * reported back so the caller can warn the user to switch them to
+     * "Controller@method" or [Controller::class, 'method'] syntax.
+     *
+     * @return array{routes:array<int,array{method:string,path:string,action:array<int,mixed>|string,middleware:array<int,mixed>,name:?string}>,skipped:int}
+     */
+    public function toCacheable(): array
+    {
+        $routes = [];
+        $skipped = 0;
+
+        foreach ($this->routes as $route) {
+            $action = $route->getAction();
+            $middleware = $route->getMiddleware();
+
+            if ($action instanceof \Closure || $this->containsClosure($middleware)) {
+                $skipped++;
+                continue;
+            }
+
+            $routes[] = [
+                'method' => $route->getMethod(),
+                'path' => $route->getPath(),
+                'action' => $action,
+                'middleware' => $middleware,
+                'name' => $route->getName(),
+            ];
+        }
+
+        return ['routes' => $routes, 'skipped' => $skipped];
+    }
+
+    /**
+     * Load routes previously produced by toCacheable(), appending them to
+     * this router's route table. Used by app bootstraps that detect a
+     * compiled routes file and want to skip re-running route definitions.
+     *
+     * @param array<int,array{method:string,path:string,action:callable|array<int,mixed>|string,middleware:array<int,mixed>,name:?string}> $cachedRoutes
+     *
+     * @return void
+     */
+    public function loadCached(array $cachedRoutes): void
+    {
+        foreach ($cachedRoutes as $data) {
+            $route = new Route($data['method'], $data['path'], $data['action']);
+
+            if (!empty($data['middleware'])) {
+                $route->middleware($data['middleware']);
+            }
+
+            if (!empty($data['name'])) {
+                $route->name($data['name']);
+            }
+
+            $this->routes[] = $route;
+        }
+    }
+
+    /**
+     * Whether a middleware list contains a Closure (and is therefore
+     * unsafe to var_export() for caching).
+     *
+     * @param array<int,mixed> $middleware
+     *
+     * @return bool
+     */
+    private function containsClosure(array $middleware): bool
+    {
+        foreach ($middleware as $item) {
+            if ($item instanceof \Closure) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

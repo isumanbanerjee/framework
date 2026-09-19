@@ -36,6 +36,8 @@ class Console
             'migrate:rollback' => [MigrateCommand::class, 'rollback'],
             'db:seed' => [SeedCommand::class, 'seed'],
             'config:cache' => [ConfigCacheCommand::class, 'cache'],
+            'route:cache' => [RouteCacheCommand::class, 'cache'],
+            'route:clear' => [RouteCacheCommand::class, 'clear'],
             'serve' => [ServerCommand::class, 'serve'],
             'docs:generate' => [DocsCommand::class, 'generate'],
         ];
@@ -312,6 +314,65 @@ class ConfigCacheCommand
 
         file_put_contents($path, $content);
         $console->info('Configuration cached.');
+    }
+}
+
+class RouteCacheCommand
+{
+    private const BASE = __DIR__ . '/../..';
+    private const CACHE_PATH = self::BASE . '/Configuration/routes_compiled.php';
+
+    public function cache($args, $options): void
+    {
+        $console = new Console();
+        $routesFile = $options['routes'] ?? null;
+
+        if (!$routesFile) {
+            $console->error('Routes file required: php console route:cache --routes=routes/api.php');
+            return;
+        }
+
+        $routesPath = self::BASE . '/' . ltrim($routesFile, '/');
+
+        if (!file_exists($routesPath)) {
+            $console->error("Routes file not found: {$routesFile}");
+            return;
+        }
+
+        $router = require $routesPath;
+
+        if (!$router instanceof Router) {
+            $console->error('Routes file must return a Router instance.');
+            return;
+        }
+
+        $cacheable = $router->toCacheable();
+
+        $content = '<?php' . PHP_EOL . PHP_EOL
+            . '// Auto-generated route cache. Do not edit.' . PHP_EOL
+            . 'return ' . var_export($cacheable['routes'], true) . ';' . PHP_EOL;
+
+        file_put_contents(self::CACHE_PATH, $content);
+
+        $console->info(sprintf('%d routes cached.', count($cacheable['routes'])));
+
+        if ($cacheable['skipped'] > 0) {
+            $console->error(sprintf(
+                '%d route(s) skipped: closures cannot be cached. Use "Controller@method" or [Controller::class, \'method\'] instead.',
+                $cacheable['skipped']
+            ));
+        }
+    }
+
+    public function clear(): void
+    {
+        $console = new Console();
+
+        if (file_exists(self::CACHE_PATH)) {
+            unlink(self::CACHE_PATH);
+        }
+
+        $console->info('Route cache cleared.');
     }
 }
 

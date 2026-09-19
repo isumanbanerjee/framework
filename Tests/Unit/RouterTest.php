@@ -170,4 +170,80 @@ final class RouterTest extends TestCase
 
         $this->assertSame('matched', $router->resolve());
     }
+
+    public function testToCacheableIncludesStringAndArrayActions(): void
+    {
+        $router = $this->router();
+        $router->get('/users', 'System\Controller\UserController@index')->name('users.index');
+        $router->post('/posts', [\stdClass::class, 'store'])->middleware(['auth', 'csrf']);
+
+        $cacheable = $router->toCacheable();
+
+        $this->assertSame(0, $cacheable['skipped']);
+        $this->assertCount(2, $cacheable['routes']);
+        $this->assertSame([
+            'method' => 'GET',
+            'path' => '/users',
+            'action' => 'System\Controller\UserController@index',
+            'middleware' => [],
+            'name' => 'users.index',
+        ], $cacheable['routes'][0]);
+        $this->assertSame([
+            'method' => 'POST',
+            'path' => '/posts',
+            'action' => [\stdClass::class, 'store'],
+            'middleware' => ['auth', 'csrf'],
+            'name' => null,
+        ], $cacheable['routes'][1]);
+    }
+
+    public function testToCacheableSkipsClosureActionsAndClosureMiddleware(): void
+    {
+        $router = $this->router();
+        $router->get('/closure-action', fn () => 'nope');
+        $router->get('/closure-middleware', 'System\Controller\UserController@index')
+            ->middleware([fn ($req, $res, $next) => $next($req, $res)]);
+        $router->get('/cacheable', 'System\Controller\UserController@show');
+
+        $cacheable = $router->toCacheable();
+
+        $this->assertSame(2, $cacheable['skipped']);
+        $this->assertCount(1, $cacheable['routes']);
+        $this->assertSame('/cacheable', $cacheable['routes'][0]['path']);
+    }
+
+    public function testLoadCachedRebuildsRoutesAndTheyResolve(): void
+    {
+        $router = $this->router('GET', '/cached/42');
+        $router->loadCached([
+            [
+                'method' => 'GET',
+                'path' => '/cached/{id}',
+                'action' => fn ($req, $res, $id) => "id:$id",
+                'middleware' => [],
+                'name' => 'cached.show',
+            ],
+        ]);
+
+        $this->assertSame('id:42', $router->resolve());
+        $this->assertSame('cached.show', $router->getRoutes()[0]->getName());
+    }
+
+    public function testToCacheableRoundTripsThroughVarExport(): void
+    {
+        $router = $this->router();
+        $router->get('/users', 'System\Controller\UserController@index')->name('users.index');
+
+        $cacheable = $router->toCacheable();
+        $exported = var_export($cacheable['routes'], true);
+        $restored = eval('return ' . $exported . ';');
+
+        $newRouter = $this->router('GET', '/users');
+        $newRouter->loadCached($restored);
+
+        $this->assertSame(
+            $cacheable['routes'][0]['action'],
+            $newRouter->getRoutes()[0]->getAction()
+        );
+    }
 }

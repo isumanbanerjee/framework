@@ -118,4 +118,72 @@ final class ConsoleTest extends TestCase
 
         $this->assertStringContainsString('Routes file required', $output);
     }
+
+    public function testRouteCacheCommandWritesCompiledRoutesAndReportsSkips(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routesFile = 'tmp_console_test_routes_' . uniqid() . '.php';
+        $cacheFile = $root . '/Configuration/routes_compiled.php';
+
+        file_put_contents($root . '/' . $routesFile, <<<'PHP'
+            <?php
+
+            use Core\Model\Request;
+            use Core\Model\Response;
+            use Core\Model\Router;
+
+            $router = new Router(new Request(), new Response());
+            $router->get('/ping', 'System\Controller\UserController@index')->name('ping');
+            $router->get('/closure', fn () => 'nope');
+
+            return $router;
+            PHP);
+
+        try {
+            ob_start();
+            $exitCode = (new Console())->run([
+                'console',
+                'route:cache',
+                "--routes={$routesFile}",
+            ]);
+            $output = ob_get_clean();
+
+            $this->assertSame(0, $exitCode);
+            $this->assertStringContainsString('1 routes cached', $output);
+            $this->assertStringContainsString('1 route(s) skipped', $output);
+            $this->assertFileExists($cacheFile);
+
+            $cached = require $cacheFile;
+            $this->assertCount(1, $cached);
+            $this->assertSame('/ping', $cached[0]['path']);
+            $this->assertSame('ping', $cached[0]['name']);
+        } finally {
+            @unlink($root . '/' . $routesFile);
+            @unlink($cacheFile);
+        }
+    }
+
+    public function testRouteClearCommandRemovesCompiledRoutesFile(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $cacheFile = $root . '/Configuration/routes_compiled.php';
+        file_put_contents($cacheFile, '<?php return [];');
+
+        ob_start();
+        $exitCode = (new Console())->run(['console', 'route:clear']);
+        $output = ob_get_clean();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Route cache cleared', $output);
+        $this->assertFileDoesNotExist($cacheFile);
+    }
+
+    public function testRouteCacheCommandReportsErrorWithoutRoutesOption(): void
+    {
+        ob_start();
+        (new Console())->run(['console', 'route:cache']);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Routes file required', $output);
+    }
 }
