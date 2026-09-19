@@ -37,6 +37,7 @@ class Console
             'db:seed' => [SeedCommand::class, 'seed'],
             'config:cache' => [ConfigCacheCommand::class, 'cache'],
             'serve' => [ServerCommand::class, 'serve'],
+            'docs:generate' => [DocsCommand::class, 'generate'],
         ];
     }
 
@@ -65,7 +66,7 @@ class Console
             call_user_func($handler, $this->arguments, $this->options);
             return 0;
         } catch (\Exception $e) {
-            $this->error("Error: " . $e->getMessage());
+            $this->error('Error: ' . $e->getMessage());
             return 1;
         }
     }
@@ -74,7 +75,15 @@ class Console
     {
         foreach ($argv as $arg) {
             if (strpos($arg, '--') === 0) {
-                [$key, $value] = explode('=', substr($arg, 2) . '=true', 2);
+                $body = substr($arg, 2);
+
+                if (str_contains($body, '=')) {
+                    [$key, $value] = explode('=', $body, 2);
+                } else {
+                    $key = $body;
+                    $value = true;
+                }
+
                 $this->options[$key] = $value;
             } elseif (strpos($arg, '-') === 0) {
                 $this->options[substr($arg, 1)] = true;
@@ -113,7 +122,7 @@ class Console
 
     private function helpCommand(): void
     {
-        $this->line("Available commands:");
+        $this->line('Available commands:');
         foreach (array_keys($this->commands) as $command) {
             $this->line("  php console $command");
         }
@@ -126,7 +135,7 @@ class CacheCommand
     {
         $cache = new Cache();
         $cache->flush();
-        (new Console())->info("Cache cleared successfully!");
+        (new Console())->info('Cache cleared successfully!');
     }
 }
 
@@ -136,7 +145,7 @@ class QueueCommand
     {
         $queue = new Queue();
         $queueName = $args[0] ?? null;
-        (new Console())->info("Processing queue: " . ($queueName ?? 'default'));
+        (new Console())->info('Processing queue: ' . ($queueName ?? 'default'));
         $queue->work($queueName, 3, 0);
     }
 }
@@ -168,7 +177,7 @@ class MakeCommand
     {
         $name = $args[0] ?? null;
         if (!$name) {
-            (new Console())->error("Controller name required");
+            (new Console())->error('Controller name required');
             return;
         }
 
@@ -180,7 +189,7 @@ class MakeCommand
     {
         $name = $args[0] ?? null;
         if (!$name) {
-            (new Console())->error("Model name required");
+            (new Console())->error('Model name required');
             return;
         }
 
@@ -193,7 +202,7 @@ class MakeCommand
     {
         $name = $args[0] ?? null;
         if (!$name) {
-            (new Console())->error("Middleware name required");
+            (new Console())->error('Middleware name required');
             return;
         }
 
@@ -205,7 +214,7 @@ class MakeCommand
     {
         $name = $args[0] ?? null;
         if (!$name) {
-            (new Console())->error("Migration name required (e.g. create_users_table)");
+            (new Console())->error('Migration name required (e.g. create_users_table)');
             return;
         }
 
@@ -312,8 +321,55 @@ class ServerCommand
     {
         $port = $options['port'] ?? 8000;
         (new Console())->info("Server started on http://localhost:$port");
-        (new Console())->line("Press Ctrl+C to stop");
+        (new Console())->line('Press Ctrl+C to stop');
         exec("php -S localhost:$port");
     }
 }
 
+class DocsCommand
+{
+    private const BASE = __DIR__ . '/../..';
+
+    public function generate($args, $options): void
+    {
+        $console = new Console();
+        $routesFile = $options['routes'] ?? null;
+
+        if (!$routesFile) {
+            $console->error('Routes file required: php console docs:generate --routes=routes/api.php');
+            return;
+        }
+
+        $routesPath = self::BASE . '/' . ltrim($routesFile, '/');
+
+        if (!file_exists($routesPath)) {
+            $console->error("Routes file not found: {$routesFile}");
+            return;
+        }
+
+        $router = require $routesPath;
+
+        if (!$router instanceof Router) {
+            $console->error('Routes file must return a Router instance.');
+            return;
+        }
+
+        $generator = new OpenApiGenerator([
+            'title' => $options['title'] ?? 'API Documentation',
+            'version' => $options['api-version'] ?? '1.0.0',
+        ]);
+
+        $spec = $generator->generate($router);
+
+        $outputPath = self::BASE . '/' . ltrim($options['output'] ?? 'public/openapi.json', '/');
+        $dir = dirname($outputPath);
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        file_put_contents($outputPath, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+
+        $console->info('OpenAPI spec written to: ' . ltrim($options['output'] ?? 'public/openapi.json', '/'));
+    }
+}
