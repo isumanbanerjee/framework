@@ -4,7 +4,7 @@
 
 [![PHP Version](https://img.shields.io/badge/php-8.1%2B-777BB4?style=flat&logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-passing-brightgreen.svg)]()
+[![Tests](https://github.com/isumanbanerjee/framework/actions/workflows/tests.yml/badge.svg)](https://github.com/isumanbanerjee/framework/actions/workflows/tests.yml)
 
 **Maintained by:** [AnteOmnio](https://www.anteomnio.com)  
 **Created by:** [Suman Banerjee](https://www.isumanbanerjee.com)
