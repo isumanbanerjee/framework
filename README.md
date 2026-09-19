@@ -4,7 +4,7 @@
 
 [![PHP Version](https://img.shields.io/badge/php-8.1%2B-777BB4?style=flat&logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-72%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-passing-brightgreen.svg)]()
 
 **Maintained by:** [AnteOmnio](https://www.anteomnio.com)  
 **Created by:** [Suman Banerjee](https://www.isumanbanerjee.com)
@@ -746,6 +746,8 @@ echo __('messages.greeting', ['name' => 'John']);
 // Output: "Hola, John!" (if Spanish is active)
 ```
 
+**Available locales:** `en`, `es`, `fr`, `de` (`resources/lang/{locale}.php`). All locale files are tested for structural parity — see `Tests/Unit/LangFilesTest.php`.
+
 **Language Files** (`resources/lang/en.php`):
 ```php
 return [
@@ -1037,17 +1039,7 @@ php resources/vendor/bin/phpunit --coverage-html coverage/
 
 ### Test Suite
 
-```
-Total Tests: 72 passing
-
-Suites (Tests/Unit):
-├─ Collection ✅
-├─ Pagination ✅
-├─ Validation ✅
-├─ QueryBuilder (SQL compilation) ✅
-├─ QueryBuilder (SQLite integration) ✅
-└─ EnvFileParser ✅
-```
+The suite covers collections, pagination, validation, the query builder (SQL compilation and SQLite integration), env parsing, the DI container, router/middleware/resource routing, migrations (blueprint/schema/migrator/seeder), the Active Record model, notifications, and helper functions — run `composer test` for the current count.
 
 Tests run against the PHP 8.1 Docker environment (`docker compose exec php-dev81 php resources/vendor/bin/phpunit`). Coverage of the remaining components is a work in progress.
 
@@ -1240,12 +1232,10 @@ Full-stack developer and framework architect
 
 ## 📊 Project Stats
 
-- **Lines of Code**: 19,000+
 - **Components**: 23 (10 core + 13 enterprise)
-- **Test Cases**: 188+
-- **Test Coverage**: 95%
 - **PHP Version**: 8.1+
-- **Documentation**: 2,000+ lines
+- **Static analysis**: PHPStan level 5, clean (`composer analyse`)
+- **Test suite**: run `composer test` for the current count — see [Testing](#-testing)
 
 ---
 

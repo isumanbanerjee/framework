@@ -21,6 +21,7 @@
 declare(strict_types=1);
 
 use Core\Model\App;
+use Core\Model\Lang;
 
 if (!function_exists('config')) {
     /**
@@ -75,5 +76,35 @@ if (!function_exists('e')) {
     function e(?string $value): string
     {
         return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+
+if (!function_exists('__')) {
+    /**
+     * Translate a dot-notation key using the active locale.
+     *
+     * @param string               $key     Translation key, e.g. 'auth.failed'.
+     * @param array<string,string> $replace Placeholder replacements.
+     *
+     * @return string The translated string, or the key itself if not found.
+     */
+    function __(string $key, array $replace = []): string
+    {
+        return Lang::get($key, $replace);
+    }
+}
+
+if (!function_exists('trans')) {
+    /**
+     * Alias of __() for translating a dot-notation key.
+     *
+     * @param string               $key     Translation key, e.g. 'auth.failed'.
+     * @param array<string,string> $replace Placeholder replacements.
+     *
+     * @return string The translated string, or the key itself if not found.
+     */
+    function trans(string $key, array $replace = []): string
+    {
+        return Lang::get($key, $replace);
     }
 }
