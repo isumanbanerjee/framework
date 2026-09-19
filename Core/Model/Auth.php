@@ -22,9 +22,7 @@ declare(strict_types=1);
 
 namespace Core\Model;
 
-use Core\Model\App;
 use Core\Model\Database\Database;
-use Core\Model\Error;
 use Exception;
 
 /**
@@ -150,6 +148,16 @@ class Auth
     private int $rememberDuration;
 
     /**
+     * Rate limiter guarding login() against brute-force attempts
+     *
+     * Keyed per identity+IP pair; defaults to the 'login' preset (5
+     * attempts per minute, see {@see RateLimit::for()}).
+     *
+     * @var RateLimit
+     */
+    private RateLimit $rateLimiter;
+
+    /**
      * Initialize the authentication manager
      *
      * Constructs a new Auth instance with required dependencies for
@@ -174,7 +182,8 @@ class Auth
             $this->passwordColumn = App::config('AUTH_PASSWORD_COLUMN', 'password');
             $this->rememberTokenColumn = App::config('AUTH_REMEMBER_TOKEN_COLUMN', 'remember_token');
             $this->rememberDuration = (int)App::config('AUTH_REMEMBER_DURATION', 2592000);
-            
+            $this->rateLimiter = RateLimit::for('login');
+
             // Validate configuration
             if (empty($this->table) || empty($this->primaryKey)) {
                 throw new Exception('Invalid auth configuration: table and primary key required');
@@ -230,12 +239,23 @@ class Auth
         string $identity,
         string $password,
         bool $remember = false
-    ): bool
-    {
+    ): bool {
         try {
             // Validate inputs
             if (empty($identity) || empty($password)) {
                 throw new Exception('Identity and password are required');
+            }
+
+            $throttleKey = $this->throttleKey($identity);
+
+            if ($this->rateLimiter->tooManyAttempts($throttleKey)) {
+                $error = new Error();
+                $error->terminateWithError(
+                    'RATE_LIMIT_EXCEEDED',
+                    'Too many login attempts',
+                    Error::SEVERITY_WARNING,
+                    ['identity' => $identity, 'retry_after' => $this->rateLimiter->availableIn($throttleKey)]
+                );
             }
 
             // 1. Fetch user by identity
@@ -244,15 +264,18 @@ class Auth
             $user = $this->db->fetchOneNamed($query, [':identity' => $identity]);
 
             if (!$user) {
+                $this->rateLimiter->hit($throttleKey);
                 return false;
             }
 
             // 2. Verify Password
             if (!password_verify($password, $user[$this->passwordColumn])) {
+                $this->rateLimiter->hit($throttleKey);
                 return false;
             }
 
             // 3. Login Success: Set Session
+            $this->rateLimiter->resetAttempts($throttleKey);
             $this->loginUser($user);
 
             // 4. Handle "Remember Me"
@@ -270,6 +293,45 @@ class Auth
                 ['identity' => $identity]
             );
         }
+    }
+
+    /**
+     * Set a custom rate limiter for login() throttling.
+     *
+     * @param RateLimit $rateLimiter Rate limiter to guard login attempts with.
+     *
+     * @return self
+     */
+    public function setRateLimiter(RateLimit $rateLimiter): self
+    {
+        $this->rateLimiter = $rateLimiter;
+        return $this;
+    }
+
+    /**
+     * Remaining login attempts before the given identity is throttled.
+     *
+     * @param string $identity User's email or username as passed to login().
+     *
+     * @return int
+     */
+    public function loginAttemptsRemaining(string $identity): int
+    {
+        return $this->rateLimiter->retriesLeft($this->throttleKey($identity));
+    }
+
+    /**
+     * Build the rate limiter key for a login attempt, scoped to identity + client IP.
+     *
+     * @param string $identity
+     *
+     * @return string
+     */
+    private function throttleKey(string $identity): string
+    {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+        return 'login:' . strtolower($identity) . '|' . $ip;
     }
 
     /**
@@ -378,11 +440,11 @@ class Auth
                     $data[$this->passwordColumn],
                     PASSWORD_DEFAULT
                 );
-                
+
                 if ($hashedPassword === false) {
                     throw new Exception('Failed to hash password');
                 }
-                
+
                 $data[$this->passwordColumn] = $hashedPassword;
             }
 
@@ -398,7 +460,7 @@ class Auth
 
             if ($this->db->executeQuery($query, $values)) {
                 // Retrieve the last inserted ID
-                $lastId = $this->db->fetchOne("SELECT LAST_INSERT_ID() as id");
+                $lastId = $this->db->fetchOne('SELECT LAST_INSERT_ID() as id');
                 return $lastId['id'] ?? true;
             }
 
@@ -614,7 +676,7 @@ class Auth
             if (strlen($token) !== 64) {
                 throw new Exception('Failed to generate secure token');
             }
-            
+
             $hash = hash('sha256', $token);
 
             // Store hash in DB
@@ -624,7 +686,7 @@ class Auth
                 "WHERE {$this->primaryKey} = ?",
                 [$hash, $userId]
             );
-            
+
             if (!$result) {
                 throw new Exception('Failed to store remember token in database');
             }
@@ -640,7 +702,7 @@ class Auth
                 true,
                 true
             );
-            
+
             if (!$cookieSet) {
                 throw new Exception('Failed to set remember_me cookie');
             }
