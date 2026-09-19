@@ -100,6 +100,27 @@ abstract class Model
     protected bool $exists = false;
 
     /**
+     * Whether deletes should be soft (set $deletedAtColumn) instead of removing the row.
+     *
+     * @var bool
+     */
+    protected bool $softDeletes = false;
+
+    /**
+     * Column used to record soft-delete timestamps.
+     *
+     * @var string
+     */
+    protected string $deletedAtColumn = 'deleted_at';
+
+    /**
+     * Eagerly loaded relationship results, keyed by relation name.
+     *
+     * @var array<string,mixed>
+     */
+    protected array $relations = [];
+
+    /**
      * @param array<string,mixed> $attributes Initial attributes.
      */
     public function __construct(array $attributes = [])
@@ -154,13 +175,48 @@ abstract class Model
     /**
      * Start a query builder scoped to this model's table.
      *
+     * Excludes soft-deleted rows automatically when the model has
+     * $softDeletes enabled; use {@see withTrashed()} or {@see onlyTrashed()}
+     * to include them.
+     *
      * @return QueryBuilder
      */
     public static function query(): QueryBuilder
     {
         $instance = new static();
+        $builder = (new QueryBuilder(static::getConnection()))->table($instance->getTable());
+
+        if ($instance->softDeletes) {
+            $builder->whereNull($instance->deletedAtColumn);
+        }
+
+        return $builder;
+    }
+
+    /**
+     * Start a query builder that includes soft-deleted rows.
+     *
+     * @return QueryBuilder
+     */
+    public static function withTrashed(): QueryBuilder
+    {
+        $instance = new static();
 
         return (new QueryBuilder(static::getConnection()))->table($instance->getTable());
+    }
+
+    /**
+     * Start a query builder scoped to only soft-deleted rows.
+     *
+     * @return QueryBuilder
+     */
+    public static function onlyTrashed(): QueryBuilder
+    {
+        $instance = new static();
+
+        return (new QueryBuilder(static::getConnection()))
+            ->table($instance->getTable())
+            ->whereNotNull($instance->deletedAtColumn);
     }
 
     /**
@@ -277,9 +333,38 @@ abstract class Model
     /**
      * Delete the model from the database.
      *
+     * When $softDeletes is enabled, this sets $deletedAtColumn instead of
+     * removing the row; use {@see forceDelete()} to bypass soft deletes.
+     *
      * @return bool
      */
     public function delete(): bool
+    {
+        if (!$this->exists) {
+            return false;
+        }
+
+        if ($this->softDeletes) {
+            $now = date('Y-m-d H:i:s');
+            $result = (new QueryBuilder(static::getConnection()))
+                ->table($this->getTable())
+                ->where($this->primaryKey, $this->attributes[$this->primaryKey])
+                ->update([$this->deletedAtColumn => $now]);
+
+            $this->attributes[$this->deletedAtColumn] = $now;
+
+            return $result;
+        }
+
+        return $this->forceDelete();
+    }
+
+    /**
+     * Permanently delete the model, bypassing soft deletes.
+     *
+     * @return bool
+     */
+    public function forceDelete(): bool
     {
         if (!$this->exists) {
             return false;
@@ -293,6 +378,37 @@ abstract class Model
         $this->exists = false;
 
         return $result;
+    }
+
+    /**
+     * Clear a soft-delete timestamp, restoring the model.
+     *
+     * @return bool
+     */
+    public function restore(): bool
+    {
+        if (!$this->softDeletes || !$this->exists) {
+            return false;
+        }
+
+        $result = (new QueryBuilder(static::getConnection()))
+            ->table($this->getTable())
+            ->where($this->primaryKey, $this->attributes[$this->primaryKey])
+            ->update([$this->deletedAtColumn => null]);
+
+        $this->attributes[$this->deletedAtColumn] = null;
+
+        return $result;
+    }
+
+    /**
+     * Whether the model has been soft-deleted.
+     *
+     * @return bool
+     */
+    public function trashed(): bool
+    {
+        return $this->softDeletes && ($this->attributes[$this->deletedAtColumn] ?? null) !== null;
     }
 
     /**
@@ -336,6 +452,100 @@ abstract class Model
     }
 
     /**
+     * Define a many-to-many relationship via a pivot table.
+     *
+     * @param class-string<Model> $related         Related model class.
+     * @param string              $pivotTable      Pivot table name.
+     * @param string              $foreignPivotKey Column on the pivot table referencing this model.
+     * @param string              $relatedPivotKey Column on the pivot table referencing the related model.
+     * @param string              $relatedKey      Primary key column on the related table.
+     *
+     * @return array<int,Model>
+     */
+    public function belongsToMany(
+        string $related,
+        string $pivotTable,
+        string $foreignPivotKey,
+        string $relatedPivotKey,
+        string $relatedKey = 'id'
+    ): array {
+        /** @var Model $instance */
+        $instance = new $related();
+        $relatedTable = $instance->getTable();
+
+        $rows = (new QueryBuilder(static::getConnection()))
+            ->table($relatedTable)
+            ->join(
+                $pivotTable,
+                "$relatedTable.$relatedKey",
+                '=',
+                "$pivotTable.$relatedPivotKey"
+            )
+            ->where("$pivotTable.$foreignPivotKey", $this->attributes[$this->primaryKey])
+            ->get();
+
+        return array_map(
+            static fn (array $row): Model => $related::hydrate($row),
+            $rows
+        );
+    }
+
+    /**
+     * Eagerly resolve and cache named relationship methods on this model.
+     *
+     * Each name must correspond to a zero-argument public method on the
+     * model (typically a thin wrapper around hasMany()/belongsTo()/
+     * belongsToMany()) that returns the relationship result.
+     *
+     * @param string ...$relationNames Relationship method names.
+     *
+     * @return static
+     */
+    public function load(string ...$relationNames): static
+    {
+        foreach ($relationNames as $name) {
+            if (!method_exists($this, $name)) {
+                throw new RuntimeException("Undefined relation: {$name}");
+            }
+
+            $this->relations[$name] = $this->{$name}();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Retrieve a previously eager-loaded relationship result.
+     *
+     * @param string $name Relationship method name.
+     *
+     * @return mixed
+     */
+    public function getRelation(string $name): mixed
+    {
+        return $this->relations[$name] ?? null;
+    }
+
+    /**
+     * Fetch all models with the given relationships eagerly loaded.
+     *
+     * @param array<int,string>|string $relations Relationship method name(s).
+     *
+     * @return array<int,static>
+     */
+    public static function with(array|string $relations): array
+    {
+        $relations = is_array($relations) ? $relations : [$relations];
+        $models = static::all();
+
+        foreach ($models as $model) {
+            $model->load(...$relations);
+        }
+
+        return $models;
+    }
+
+    /**
      * Whether the model exists in the database.
      *
      * @return bool
@@ -364,7 +574,11 @@ abstract class Model
      */
     public function __get(string $name): mixed
     {
-        return $this->attributes[$name] ?? null;
+        if (array_key_exists($name, $this->attributes)) {
+            return $this->attributes[$name];
+        }
+
+        return $this->relations[$name] ?? null;
     }
 
     /**
@@ -389,7 +603,7 @@ abstract class Model
      */
     public function __isset(string $name): bool
     {
-        return isset($this->attributes[$name]);
+        return isset($this->attributes[$name]) || isset($this->relations[$name]);
     }
 
     /**

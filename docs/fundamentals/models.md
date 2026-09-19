@@ -77,6 +77,55 @@ class Post extends Model
 
 `hasMany()` returns an array of hydrated model instances; `belongsTo()` returns a single instance or `null`.
 
+### Many-to-many
+
+```php
+class Post extends Model
+{
+    public function tags(): array
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id');
+    }
+}
+```
+
+`belongsToMany()` joins the pivot table (`post_tag`) to the related table and returns an array of hydrated related models.
+
+### Eager loading
+
+Each relationship above is a plain method, so accessing it lazily (`$post->tags()`) always re-queries. To resolve relationships up front and cache them on the instance, use `load()`/`with()`:
+
+```php
+$post = Post::find(1)->load('tags', 'author');
+$post->tags;   // cached result from load(), via magic __get
+$post->author;
+
+$posts = Post::with('author'); // loads 'author' onto every row from all()
+```
+
+`with()`/`load()` call the named zero-argument relationship methods and cache their results per instance — they don't batch the underlying queries into a single `JOIN`/`WHERE IN`, so still expect one query per model per relation.
+
+## Soft deletes
+
+Opt a model into soft deletes to have `delete()` set a timestamp column instead of removing the row:
+
+```php
+class Post extends Model
+{
+    protected bool $softDeletes = true; // uses 'deleted_at' by default
+}
+
+$post->delete();     // sets deleted_at, row stays in the table
+$post->trashed();    // true
+$post->restore();    // clears deleted_at
+
+Post::find($id);          // excludes soft-deleted rows
+Post::withTrashed()->get();  // includes them
+Post::onlyTrashed()->get();  // only soft-deleted rows
+
+$post->forceDelete(); // bypasses soft deletes, removes the row
+```
+
 ## Querying below the model layer
 
 For anything beyond simple CRUD, drop down to the query builder directly:

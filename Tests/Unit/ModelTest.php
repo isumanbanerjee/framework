@@ -16,6 +16,28 @@ class Author extends Model
 class Book extends Model
 {
     protected array $fillable = ['title', 'author_id'];
+
+    public function author(): ?Model
+    {
+        return $this->belongsTo(Author::class, 'author_id');
+    }
+
+    public function tags(): array
+    {
+        return $this->belongsToMany(Tag::class, 'book_tag', 'book_id', 'tag_id');
+    }
+}
+
+class Tag extends Model
+{
+    protected array $fillable = ['name'];
+}
+
+class TrashedNote extends Model
+{
+    protected string $table = 'trashed_notes';
+    protected array $fillable = ['body'];
+    protected bool $softDeletes = true;
 }
 
 final class ModelTest extends TestCase
@@ -33,6 +55,17 @@ final class ModelTest extends TestCase
         $this->pdo->exec(
             'CREATE TABLE books (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author_id INTEGER,
              created_at TEXT, updated_at TEXT)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE tags (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT,
+             created_at TEXT, updated_at TEXT)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE book_tag (book_id INTEGER, tag_id INTEGER)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE trashed_notes (id INTEGER PRIMARY KEY AUTOINCREMENT, body TEXT,
+             created_at TEXT, updated_at TEXT, deleted_at TEXT)'
         );
         Model::setConnection($this->pdo);
     }
@@ -140,5 +173,108 @@ final class ModelTest extends TestCase
 
         $this->assertNotNull($owner);
         $this->assertSame('Writer', $owner->name);
+    }
+
+    public function testBelongsToManyRelationship(): void
+    {
+        $book = Book::create(['title' => 'Tagged Book']);
+        $fiction = Tag::create(['name' => 'Fiction']);
+        $classic = Tag::create(['name' => 'Classic']);
+        Tag::create(['name' => 'Unrelated']);
+
+        $this->pdo->exec("INSERT INTO book_tag (book_id, tag_id) VALUES ({$book->id}, {$fiction->id})");
+        $this->pdo->exec("INSERT INTO book_tag (book_id, tag_id) VALUES ({$book->id}, {$classic->id})");
+
+        $tags = $book->tags();
+
+        $this->assertCount(2, $tags);
+        $this->assertContainsOnlyInstancesOf(Tag::class, $tags);
+        $this->assertSame(['Fiction', 'Classic'], array_map(fn (Tag $tag) => $tag->name, $tags));
+    }
+
+    public function testLoadEagerLoadsNamedRelation(): void
+    {
+        $author = Author::create(['name' => 'Loader']);
+        $book = Book::create(['title' => 'Loaded', 'author_id' => $author->id]);
+
+        $book->load('author');
+
+        $this->assertSame('Loader', $book->getRelation('author')->name);
+        $this->assertSame('Loader', $book->author->name);
+    }
+
+    public function testLoadThrowsForUndefinedRelation(): void
+    {
+        $this->expectException(\RuntimeException::class);
+
+        (new Author())->load('nope');
+    }
+
+    public function testWithEagerLoadsRelationForAllModels(): void
+    {
+        $author = Author::create(['name' => 'Batch']);
+        Book::create(['title' => 'One', 'author_id' => $author->id]);
+        Book::create(['title' => 'Two', 'author_id' => $author->id]);
+
+        $books = Book::with('author');
+
+        $this->assertCount(2, $books);
+        foreach ($books as $book) {
+            $this->assertSame('Batch', $book->author->name);
+        }
+    }
+
+    public function testSoftDeleteHidesRowFromDefaultQueries(): void
+    {
+        $note = TrashedNote::create(['body' => 'Temp']);
+        $id = $note->id;
+
+        $this->assertTrue($note->delete());
+
+        $this->assertNull(TrashedNote::find($id));
+        $this->assertTrue($note->trashed());
+        $this->assertCount(0, TrashedNote::all());
+    }
+
+    public function testSoftDeletedRowIsStillInDatabase(): void
+    {
+        $note = TrashedNote::create(['body' => 'Kept']);
+        $note->delete();
+
+        $stillThere = TrashedNote::withTrashed()->where('id', $note->id)->first();
+        $this->assertNotNull($stillThere);
+        $this->assertNotNull($stillThere['deleted_at']);
+    }
+
+    public function testOnlyTrashedReturnsSoftDeletedRowsOnly(): void
+    {
+        TrashedNote::create(['body' => 'Alive']);
+        $dead = TrashedNote::create(['body' => 'Dead']);
+        $dead->delete();
+
+        $trashed = TrashedNote::onlyTrashed()->get();
+        $this->assertCount(1, $trashed);
+        $this->assertSame('Dead', $trashed[0]['body']);
+    }
+
+    public function testRestoreClearsDeletedAt(): void
+    {
+        $note = TrashedNote::create(['body' => 'Bouncy']);
+        $note->delete();
+        $this->assertTrue($note->trashed());
+
+        $this->assertTrue($note->restore());
+        $this->assertFalse($note->trashed());
+        $this->assertNotNull(TrashedNote::find($note->id));
+    }
+
+    public function testForceDeleteRemovesRowPermanently(): void
+    {
+        $note = TrashedNote::create(['body' => 'Gone']);
+        $id = $note->id;
+
+        $this->assertTrue($note->forceDelete());
+
+        $this->assertNull(TrashedNote::withTrashed()->where('id', $id)->first());
     }
 }
