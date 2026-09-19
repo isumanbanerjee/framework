@@ -402,7 +402,8 @@ class Database
     {
         $stmt = $this->pdo->prepare($query);
         $stmt->execute($params);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -698,7 +699,8 @@ class Database
     {
         $stmt = $this->pdo->prepare($query);
         $stmt->execute($params);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function createSavepoint(string $savepointName): bool

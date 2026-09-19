@@ -13,7 +13,7 @@ services:
 
         # Install PHP extensions
         RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-            && docker-php-ext-install -j$(nproc) mysqli intl exif gd
+            && docker-php-ext-install -j$(nproc) mysqli pdo_mysql intl exif gd
 
         # Install Imagick (requires pecl)
         RUN pecl install imagick && docker-php-ext-enable imagick
@@ -37,3 +37,20 @@ services:
     # processes can actually write to it before starting Apache.
     command: >
       bash -c "mkdir -p /var/www/html/logs && chmod 777 /var/www/html/logs && apache2-foreground"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Backs Tests/Integration/AuthIntegrationTest.php - phpunit.xml sets
+  # APP_ENV=testing, which resolves to Configuration/config.env.testing
+  # (DB_HOST=mysql, matching this service's name on the compose network).
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: testing
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-psecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

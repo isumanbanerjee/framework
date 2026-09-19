@@ -14,6 +14,21 @@ jobs:
       fail-fast: false
       matrix:
         php: ['8.1', '8.2', '8.3']
+    # Backs Tests/Integration/AuthIntegrationTest.php, which needs a real
+    # MySQL connection.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -psecret"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -40,6 +55,42 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
+
+      # Configuration/config.env.* files are gitignored (they hold
+      # environment credentials), so CI provisions its own testing config
+      # here rather than committing one. DB_HOST is 127.0.0.1, not the
+      # `mysql` hostname used in docker-compose.yml's local dev setup,
+      # because this job runs directly on the runner rather than in a
+      # container - GitHub Actions service containers are only reachable by
+      # hostname when the job itself runs in a container.
+      - name: Write testing config
+        run: |
+          cat > Configuration/config.env.testing <<'EOF'
+          DB_TYPE=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_NAME=testing
+          DB_USERNAME=root
+          DB_PASSWORD=secret
+          DB_CHARSET=utf8mb4
+          QUERY_BUILDER_ENABLED=true
+          CACHE_DRIVER=file
+          QUEUE_DRIVER=database
+          STORAGE_DRIVER=local
+          APP_NAME=OmnioPHP (testing)
+          APP_ENV=testing
+          APP_DEBUG=true
+          APP_URL=http://localhost
+          AUTH_TABLE=users
+          AUTH_PRIMARY_KEY=id
+          AUTH_IDENTITY_COLUMN=email
+          AUTH_PASSWORD_COLUMN=password
+          AUTH_REMEMBER_TOKEN_COLUMN=remember_token
+          AUTH_REMEMBER_DURATION=2592000
+          LOG_CHANNEL=single
+          LOG_LEVEL=debug
+          LOG_PATH=storage/logs/testing.log
+          EOF
 
       - name: Run test suite
         run: composer test

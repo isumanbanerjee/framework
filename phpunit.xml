@@ -4,6 +4,13 @@
          bootstrap="resources/vendor/autoload.php"
          colors="true"
          cacheDirectory=".phpunit.cache">
+    <php>
+        <!-- Pins App's config resolution to Configuration/config.env.testing for
+             the whole run: App is a process-lifetime singleton with no reset
+             hook, so this must be set before any test touches it, not inside
+             a single test's setUp(). -->
+        <env name="APP_ENV" value="testing" force="true"/>
+    </php>
     <testsuites>
         <testsuite name="Unit">
             <directory>Tests/Unit</directory>
