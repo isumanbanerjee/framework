@@ -44,6 +44,13 @@ final class RecordingResponse extends Response
         $this->setHeader('Location', $url);
         $this->setStatusCode(302);
     }
+
+    public function html(string $html, int $statusCode = 200): void
+    {
+        $this->body = $html;
+        $this->setHeader('Content-Type', 'text/html; charset=utf-8');
+        $this->setStatusCode($statusCode);
+    }
 }
 
 /**

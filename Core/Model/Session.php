@@ -207,12 +207,14 @@ class Session
                 return;
             }
             
-            // Prevent JavaScript from accessing the session cookie
-            if (!ini_set('session.use_only_cookies', '1')) {
+            // ini_set() returns the *old* value on success, or false on
+            // failure - a falsy old value (e.g. "0") must not be mistaken
+            // for failure, so check explicitly against false.
+            if (ini_set('session.use_only_cookies', '1') === false) {
                 throw new Exception('Failed to set session.use_only_cookies');
             }
-            
-            if (!ini_set('session.use_strict_mode', '1')) {
+
+            if (ini_set('session.use_strict_mode', '1') === false) {
                 throw new Exception('Failed to set session.use_strict_mode');
             }
 

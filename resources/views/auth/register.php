@@ -13,6 +13,8 @@ Create an account
     @endif
 
     <form method="POST" action="/register">
+        <input type="hidden" name="csrf_token" value="{{ $csrfToken }}">
+
         <label for="name">Name</label>
         <input type="text" id="name" name="name" required autofocus>
 

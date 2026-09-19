@@ -37,12 +37,6 @@ parameters:
 			path: Core/Model/Http.php
 
 		-
-			message: '#^Parameter \#1 \$db of class Core\\Model\\Auth constructor expects Core\\Model\\Database\\Database, null given\.$#'
-			identifier: argument.type
-			count: 3
-			path: Core/Model/Middleware.php
-
-		-
 			message: '#^Property Core\\Model\\Middleware\:\:\$middleware is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1

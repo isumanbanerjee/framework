@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/resources/vendor/autoload.php';
 
 use Core\Model\Request;
@@ -23,5 +24,7 @@ $router->get('/health', function ($req, $res) {
         'timestamp' => time(),
     ]);
 });
+
+require __DIR__ . '/routes/web.php';
 
 $router->resolve();

@@ -386,6 +386,27 @@ class Auth
     }
 
     /**
+     * Check whether a user already exists for the given identity
+     *
+     * Useful for pre-flight duplicate checks before calling register(),
+     * e.g. to show a friendly "email already taken" message instead of
+     * letting the INSERT fail on a unique constraint.
+     *
+     * @param string $identity User's email/username, as used by login()
+     *
+     * @return bool True if a matching user row exists
+     *
+     * @since 1.0.0
+     */
+    public function identityExists(string $identity): bool
+    {
+        $query = "SELECT {$this->primaryKey} FROM {$this->table} " .
+                 "WHERE {$this->identityColumn} = :identity LIMIT 1";
+
+        return (bool) $this->db->fetchOneNamed($query, [':identity' => $identity]);
+    }
+
+    /**
      * Register a new user account
      *
      * Creates a new user record with automatic password hashing. Accepts

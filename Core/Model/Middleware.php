@@ -3,6 +3,7 @@
 namespace Core\Model;
 
 use Closure;
+use Core\Model\Database\Database;
 use Exception;
 
 /**
@@ -284,7 +285,7 @@ class AuthMiddleware
     public function handle(Request $request, Response $response, Closure $next)
     {
         $session = new Session();
-        $auth = new Auth(null, $session);
+        $auth = new Auth(new Database(new Logger('logs/app.log')), $session);
 
         if (!$auth->check()) {
             $response->redirect('/login');
@@ -303,7 +304,7 @@ class GuestMiddleware
     public function handle(Request $request, Response $response, Closure $next)
     {
         $session = new Session();
-        $auth = new Auth(null, $session);
+        $auth = new Auth(new Database(new Logger('logs/app.log')), $session);
 
         if ($auth->check()) {
             $response->redirect('/dashboard');
@@ -423,7 +424,7 @@ class AdminMiddleware
     public function handle(Request $request, Response $response, Closure $next)
     {
         $session = new Session();
-        $auth = new Auth(null, $session);
+        $auth = new Auth(new Database(new Logger('logs/app.log')), $session);
 
         if (!$auth->check()) {
             $response->redirect('/login');

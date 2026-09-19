@@ -93,7 +93,7 @@ resources/views/
     └── {404,403,500,503}.php
 ```
 
-`layouts/app.php` and `layouts/guest.php` are plain example layouts, not wired to any router/controller — copy and adapt them once real auth routes exist. `components/header.php` and `components/footer.php` read `$appName` from **shared** data (`$template->share('appName', 'MyApp')`), not from `render()`'s `$data` argument — see the note below on `@include` scoping.
+`layouts/app.php` is a plain example layout, not wired to any router/controller — copy and adapt it for your authenticated pages. `layouts/guest.php` and the `auth/` views *are* wired: `routes/web.php` registers `GET`/`POST /login` and `/register` against `System\Controller\AuthController`, which renders `auth.login`/`auth.register` with a `csrfToken` (from `Session::generateCsrfToken()`) and an optional `error` (from `Session::getFlash('error')`). `components/header.php` and `components/footer.php` read `$appName` from **shared** data (`$template->share('appName', 'MyApp')`), not from `render()`'s `$data` argument — see the note below on `@include` scoping.
 
 ## `@include` does not inherit the caller's variables
 

@@ -13,6 +13,8 @@ Sign in
     @endif
 
     <form method="POST" action="/login">
+        <input type="hidden" name="csrf_token" value="{{ $csrfToken }}">
+
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required autofocus>
 
