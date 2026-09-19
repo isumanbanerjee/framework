@@ -101,7 +101,7 @@ class Mail
 
         $this->from = [
             'address' => $config['from_address'] ?? App::config('MAIL_FROM_ADDRESS', 'noreply@example.com'),
-            'name' => $config['from_name'] ?? App::config('MAIL_FROM_NAME', 'Application')
+            'name' => $config['from_name'] ?? App::config('MAIL_FROM_NAME', 'Application'),
         ];
 
         $this->mailer->setFrom($this->from['address'], $this->from['name']);
@@ -179,7 +179,7 @@ class Mail
             $logger->logError('Email send failed', [
                 'to' => $to,
                 'subject' => $subject,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return false;
@@ -218,7 +218,7 @@ class Mail
             $this->queue = new Queue();
         }
 
-        $this->queue->push(function() use ($to, $subject, $body, $options) {
+        $this->queue->push(function () use ($to, $subject, $body, $options) {
             $this->send($to, $subject, $body, $options);
         }, [], $queue);
     }
@@ -240,7 +240,7 @@ class Mail
             $this->queue = new Queue();
         }
 
-        $this->queue->push(function() use ($to, $subject, $template, $data, $options) {
+        $this->queue->push(function () use ($to, $subject, $template, $data, $options) {
             $this->sendTemplate($to, $subject, $template, $data, $options);
         }, [], $queue);
     }
@@ -294,4 +294,3 @@ class Mail
         }
     }
 }
-

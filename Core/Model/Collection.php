@@ -30,12 +30,30 @@ class Collection implements ArrayAccess, Countable, Iterator
         return new self($items);
     }
 
-    public function all(): array { return $this->items; }
-    public function count(): int { return count($this->items); }
-    public function isEmpty(): bool { return empty($this->items); }
-    public function isNotEmpty(): bool { return !$this->isEmpty(); }
-    public function first() { return $this->items[0] ?? null; }
-    public function last() { return end($this->items) ?: null; }
+    public function all(): array
+    {
+        return $this->items;
+    }
+    public function count(): int
+    {
+        return count($this->items);
+    }
+    public function isEmpty(): bool
+    {
+        return empty($this->items);
+    }
+    public function isNotEmpty(): bool
+    {
+        return !$this->isEmpty();
+    }
+    public function first()
+    {
+        return $this->items[0] ?? null;
+    }
+    public function last()
+    {
+        return end($this->items) ?: null;
+    }
 
     public function map(callable $callback): self
     {
@@ -49,12 +67,12 @@ class Collection implements ArrayAccess, Countable, Iterator
 
     public function where(string $key, $value): self
     {
-        return $this->filter(fn($item) => is_array($item) ? ($item[$key] ?? null) === $value : ($item->$key ?? null) === $value);
+        return $this->filter(fn ($item) => is_array($item) ? ($item[$key] ?? null) === $value : ($item->$key ?? null) === $value);
     }
 
     public function pluck(string $key): self
     {
-        return $this->map(fn($item) => is_array($item) ? ($item[$key] ?? null) : ($item->$key ?? null));
+        return $this->map(fn ($item) => is_array($item) ? ($item[$key] ?? null) : ($item->$key ?? null));
     }
 
     public function unique(): self
@@ -136,17 +154,44 @@ class Collection implements ArrayAccess, Countable, Iterator
     }
 
     // ArrayAccess
-    public function offsetExists($offset): bool { return isset($this->items[$offset]); }
-    public function offsetGet($offset): mixed { return $this->items[$offset] ?? null; }
-    public function offsetSet($offset, $value): void { $this->items[$offset] = $value; }
-    public function offsetUnset($offset): void { unset($this->items[$offset]); }
+    public function offsetExists($offset): bool
+    {
+        return isset($this->items[$offset]);
+    }
+    public function offsetGet($offset): mixed
+    {
+        return $this->items[$offset] ?? null;
+    }
+    public function offsetSet($offset, $value): void
+    {
+        $this->items[$offset] = $value;
+    }
+    public function offsetUnset($offset): void
+    {
+        unset($this->items[$offset]);
+    }
 
     // Iterator
-    public function rewind(): void { $this->position = 0; }
-    public function current(): mixed { return array_values($this->items)[$this->position] ?? null; }
-    public function key(): mixed { return array_keys($this->items)[$this->position] ?? null; }
-    public function next(): void { ++$this->position; }
-    public function valid(): bool { return isset(array_values($this->items)[$this->position]); }
+    public function rewind(): void
+    {
+        $this->position = 0;
+    }
+    public function current(): mixed
+    {
+        return array_values($this->items)[$this->position] ?? null;
+    }
+    public function key(): mixed
+    {
+        return array_keys($this->items)[$this->position] ?? null;
+    }
+    public function next(): void
+    {
+        ++$this->position;
+    }
+    public function valid(): bool
+    {
+        return isset(array_values($this->items)[$this->position]);
+    }
 }
 
 /**
@@ -156,4 +201,3 @@ function collect(array $items = []): Collection
 {
     return new Collection($items);
 }
-

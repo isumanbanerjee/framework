@@ -22,8 +22,6 @@ declare(strict_types=1);
 
 namespace Core\Model;
 
-use Core\Model\App;
-use Core\Model\Error;
 use Exception;
 
 /**
@@ -154,7 +152,7 @@ class Session
                 } else {
                     // Full security configuration for production
                     $this->configureSession();
-                    
+
                     if (!session_start()) {
                         throw new Exception('Failed to start session');
                     }
@@ -169,7 +167,7 @@ class Session
                 error_log('Session initialization warning: ' . $e->getMessage());
                 return;
             }
-            
+
             $error = new Error();
             $error->terminateWithError(
                 'SESSION_INITIALIZATION_FAILED',
@@ -206,7 +204,7 @@ class Session
             if (defined('TEST_ENV') || php_sapi_name() === 'cli') {
                 return;
             }
-            
+
             // ini_set() returns the *old* value on success, or false on
             // failure - a falsy old value (e.g. "0") must not be mistaken
             // for failure, so check explicitly against false.
@@ -226,7 +224,7 @@ class Session
                 'domain' => $_SERVER['HTTP_HOST'] ?? '',
                 'secure' => $secure,
                 'httponly' => true,
-                'samesite' => 'Strict'
+                'samesite' => 'Strict',
             ]);
         } catch (Exception $e) {
             // In test environment, just log the error
@@ -234,7 +232,7 @@ class Session
                 error_log('Session configuration warning: ' . $e->getMessage());
                 return;
             }
-            
+
             $error = new Error();
             $error->terminateWithError(
                 'SESSION_CONFIGURATION_FAILED',
@@ -270,7 +268,7 @@ class Session
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 throw new Exception('Session is not active');
             }
-            
+
             $_SESSION[$key] = $value;
         } catch (Exception $e) {
             $error = new Error();
@@ -392,7 +390,7 @@ class Session
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 throw new Exception('Session is not active');
             }
-            
+
             if (!session_regenerate_id(true)) {
                 throw new Exception('Failed to regenerate session ID');
             }
@@ -438,16 +436,16 @@ class Session
         try {
             $_SESSION = [];
 
-            if (ini_get("session.use_cookies")) {
+            if (ini_get('session.use_cookies')) {
                 $params = session_get_cookie_params();
                 setcookie(
                     session_name(),
                     '',
                     time() - 42000,
-                    $params["path"],
-                    $params["domain"],
-                    $params["secure"],
-                    $params["httponly"]
+                    $params['path'],
+                    $params['domain'],
+                    $params['secure'],
+                    $params['httponly']
                 );
             }
 
@@ -508,7 +506,7 @@ class Session
     {
         $_SESSION[$this->flashKey][$key] = [
             'message' => $message,
-            'remove' => false
+            'remove' => false,
         ];
     }
 

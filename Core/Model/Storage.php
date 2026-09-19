@@ -626,4 +626,3 @@ class Storage
         return $this;
     }
 }
-

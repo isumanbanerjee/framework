@@ -33,14 +33,38 @@ class Pagination
         return max(1, (int) ($_GET['page'] ?? 1));
     }
 
-    public function items(): array { return $this->items; }
-    public function total(): int { return $this->total; }
-    public function perPage(): int { return $this->perPage; }
-    public function currentPage(): int { return $this->currentPage; }
-    public function lastPage(): int { return (int) ceil($this->total / $this->perPage); }
-    public function hasMorePages(): bool { return $this->currentPage() < $this->lastPage(); }
-    public function hasPages(): bool { return $this->lastPage() > 1; }
-    public function onFirstPage(): bool { return $this->currentPage() <= 1; }
+    public function items(): array
+    {
+        return $this->items;
+    }
+    public function total(): int
+    {
+        return $this->total;
+    }
+    public function perPage(): int
+    {
+        return $this->perPage;
+    }
+    public function currentPage(): int
+    {
+        return $this->currentPage;
+    }
+    public function lastPage(): int
+    {
+        return (int) ceil($this->total / $this->perPage);
+    }
+    public function hasMorePages(): bool
+    {
+        return $this->currentPage() < $this->lastPage();
+    }
+    public function hasPages(): bool
+    {
+        return $this->lastPage() > 1;
+    }
+    public function onFirstPage(): bool
+    {
+        return $this->currentPage() <= 1;
+    }
 
     public function nextPageUrl(): ?string
     {
@@ -120,4 +144,3 @@ class Pagination
         return json_encode($this->toArray());
     }
 }
-

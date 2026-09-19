@@ -3,7 +3,6 @@
 namespace Core\Model;
 
 use Exception;
-use DateTime;
 
 /**
  * Enterprise Queue/Job System
@@ -219,7 +218,7 @@ class Queue
     private function pushToDatabase(string $queue, string $payload, int $availableAt): int
     {
         $this->db->executeQuery(
-            "INSERT INTO jobs (queue, payload, available_at, created_at) VALUES (?, ?, ?, ?)",
+            'INSERT INTO jobs (queue, payload, available_at, created_at) VALUES (?, ?, ?, ?)',
             [$queue, $payload, $availableAt, time()]
         );
 
@@ -240,7 +239,7 @@ class Queue
         $job = json_encode([
             'id' => $id,
             'payload' => $payload,
-            'available_at' => $availableAt
+            'available_at' => $availableAt,
         ]);
 
         $this->cache->put("queue:{$queue}:{$id}", $job, 86400);
@@ -267,7 +266,7 @@ class Queue
             'id' => $id,
             'payload' => $payload,
             'available_at' => $availableAt,
-            'attempts' => 0
+            'attempts' => 0,
         ]);
 
         file_put_contents($queueDir . '/' . $id . '.json', $job, LOCK_EX);
@@ -311,12 +310,12 @@ class Queue
 
         try {
             $job = $this->db->fetchOne(
-                "SELECT * FROM jobs
+                'SELECT * FROM jobs
                  WHERE queue = ?
                  AND (reserved_at IS NULL OR reserved_at < ?)
                  AND available_at <= ?
                  ORDER BY available_at ASC
-                 LIMIT 1",
+                 LIMIT 1',
                 [$queue, time() - 300, time()]
             );
 
@@ -326,7 +325,7 @@ class Queue
             }
 
             $this->db->executeQuery(
-                "UPDATE jobs SET reserved_at = ?, attempts = attempts + 1 WHERE id = ?",
+                'UPDATE jobs SET reserved_at = ?, attempts = attempts + 1 WHERE id = ?',
                 [time(), $job['id']]
             );
 
@@ -349,7 +348,7 @@ class Queue
     {
         // Simplified Redis pop
         $keys = $this->cache->many(["queue:{$queue}:*"]);
-        
+
         foreach ($keys as $key => $job) {
             $jobData = json_decode($job, true);
             if ($jobData['available_at'] <= time()) {
@@ -370,13 +369,13 @@ class Queue
     private function popFromFile(string $queue): ?array
     {
         $queueDir = $this->queueDir . '/' . $queue;
-        
+
         if (!is_dir($queueDir)) {
             return null;
         }
 
         $files = glob($queueDir . '/*.json');
-        
+
         foreach ($files as $file) {
             $content = file_get_contents($file);
             $job = json_decode($content, true);
@@ -400,7 +399,7 @@ class Queue
     {
         switch ($this->driver) {
             case 'database':
-                $this->db->executeQuery("DELETE FROM jobs WHERE id = ?", [$job['id']]);
+                $this->db->executeQuery('DELETE FROM jobs WHERE id = ?', [$job['id']]);
                 return true;
 
             case 'redis':
@@ -430,7 +429,7 @@ class Queue
         switch ($this->driver) {
             case 'database':
                 $this->db->executeQuery(
-                    "UPDATE jobs SET reserved_at = NULL, available_at = ? WHERE id = ?",
+                    'UPDATE jobs SET reserved_at = NULL, available_at = ? WHERE id = ?',
                     [$availableAt, $job['id']]
                 );
                 return true;
@@ -458,7 +457,7 @@ class Queue
         return json_encode([
             'job' => is_object($job) ? get_class($job) : $job,
             'data' => $data,
-            'maxRetries' => $this->maxRetries
+            'maxRetries' => $this->maxRetries,
         ]);
     }
 
@@ -555,7 +554,7 @@ class Queue
         $logger->logError('Job failed', [
             'job' => $job,
             'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
         ]);
     }
 
@@ -572,7 +571,7 @@ class Queue
         switch ($this->driver) {
             case 'database':
                 $result = $this->db->fetchOne(
-                    "SELECT COUNT(*) as count FROM jobs WHERE queue = ? AND reserved_at IS NULL",
+                    'SELECT COUNT(*) as count FROM jobs WHERE queue = ? AND reserved_at IS NULL',
                     [$queue]
                 );
                 return (int) $result['count'];
@@ -589,4 +588,3 @@ class Queue
         }
     }
 }
-

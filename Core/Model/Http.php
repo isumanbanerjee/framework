@@ -2,8 +2,6 @@
 
 namespace Core\Model;
 
-use Exception;
-
 /**
  * Enterprise HTTP Client
  *
@@ -163,11 +161,28 @@ class HttpResponse
         $this->headers = $headers;
     }
 
-    public function status(): int { return $this->status; }
-    public function body(): string { return $this->body; }
-    public function headers(): array { return $this->headers; }
-    public function json(): array { return json_decode($this->body, true) ?? []; }
-    public function successful(): bool { return $this->status >= 200 && $this->status < 300; }
-    public function failed(): bool { return !$this->successful(); }
+    public function status(): int
+    {
+        return $this->status;
+    }
+    public function body(): string
+    {
+        return $this->body;
+    }
+    public function headers(): array
+    {
+        return $this->headers;
+    }
+    public function json(): array
+    {
+        return json_decode($this->body, true) ?? [];
+    }
+    public function successful(): bool
+    {
+        return $this->status >= 200 && $this->status < 300;
+    }
+    public function failed(): bool
+    {
+        return !$this->successful();
+    }
 }
-

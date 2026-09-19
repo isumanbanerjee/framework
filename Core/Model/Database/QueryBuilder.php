@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace Core\Model\Database;
 
 use PDO;
-use PDOException;
 
 /**
  * QueryBuilder Class
@@ -305,8 +304,7 @@ class QueryBuilder
         string $operator,
         string $second,
         string $type = 'INNER'
-    ): self
-    {
+    ): self {
         $this->joins[] = "$type JOIN $table ON $first $operator $second";
         return $this;
     }
@@ -331,8 +329,7 @@ class QueryBuilder
         string $first,
         string $operator,
         string $second
-    ): self
-    {
+    ): self {
         return $this->join($table, $first, $operator, $second, 'LEFT');
     }
 
@@ -356,8 +353,7 @@ class QueryBuilder
         string $first,
         string $operator,
         string $second
-    ): self
-    {
+    ): self {
         return $this->join($table, $first, $operator, $second, 'RIGHT');
     }
 
@@ -394,438 +390,443 @@ class QueryBuilder
         mixed $operator,
         mixed $value = null,
         string $boolean = 'AND'
-    ): self
-	{
-		// Allow shorthand: where('id', 1) defaults to where('id', '=', 1)
-		if (func_num_args() === 2) {
-			$value = $operator;
-			$operator = '=';
-		}
+    ): self {
+        // Allow shorthand: where('id', 1) defaults to where('id', '=', 1)
+        if (func_num_args() === 2) {
+            $value = $operator;
+            $operator = '=';
+        }
 
-		$this->wheres[] = [
-			'type' => 'Basic',
-			'column' => $column,
-			'operator' => (string) $operator,
-			'boolean' => $boolean
-		];
-		$this->bindings['where'][] = $value;
+        $this->wheres[] = [
+            'type' => 'Basic',
+            'column' => $column,
+            'operator' => (string) $operator,
+            'boolean' => $boolean,
+        ];
+        $this->bindings['where'][] = $value;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public function orWhere(string $column, mixed $operator, mixed $value = null): self
-	{
-		if (func_num_args() === 2) {
-			$value = $operator;
-			$operator = '=';
-		}
-		return $this->where($column, (string) $operator, $value, 'OR');
-	}
-	
-	public function whereIn(string $column, array $values, string $boolean = 'AND', bool $not = false): self
-	{
-		$type = $not ? 'NotIn' : 'In';
-		$placeholders = implode(', ', array_fill(0, count($values), '?'));
-		
-		$this->wheres[] = [
-			'type' => $type,
-			'column' => $column,
-			'placeholders' => $placeholders,
-			'boolean' => $boolean
-		];
-		
-		foreach ($values as $value) {
-			$this->bindings['where'][] = $value;
-		}
-		
-		return $this;
-	}
-	
-	public function whereNotIn(string $column, array $values, string $boolean = 'AND'): self
-	{
-		return $this->whereIn($column, $values, $boolean, true);
-	}
-	
-	public function whereNull(string $column, string $boolean = 'AND', bool $not = false): self
-	{
-		$type = $not ? 'NotNull' : 'Null';
-		$this->wheres[] = [
-			'type' => $type,
-			'column' => $column,
-			'boolean' => $boolean
-		];
-		return $this;
-	}
-	
-	public function whereNotNull(string $column, string $boolean = 'AND'): self
-	{
-		return $this->whereNull($column, $boolean, true);
-	}
-	
-	public function whereBetween(string $column, array $values, string $boolean = 'AND', bool $not = false): self
-	{
-		$type = $not ? 'NotBetween' : 'Between';
-		$this->wheres[] = [
-			'type' => $type,
-			'column' => $column,
-			'boolean' => $boolean
-		];
-		$this->bindings['where'][] = $values[0];
-		$this->bindings['where'][] = $values[1];
-		return $this;
-	}
-	
-	public function whereRaw(string $sql, array $bindings = [], string $boolean = 'AND'): self
-	{
-		$this->wheres[] = [
-			'type' => 'Raw',
-			'sql' => $sql,
-			'boolean' => $boolean
-		];
-		$this->bindings['where'] = array_merge($this->bindings['where'], $bindings);
-		return $this;
-	}
-	
-	// -------------------------------------------------------------------------
-	// GROUP BY & HAVING
-	// -------------------------------------------------------------------------
-	
-	public function groupBy(string ...$groups): self
-	{
-		$this->groups = array_merge($this->groups, $groups);
-		return $this;
-	}
-	
-	public function having(string $column, string $operator, mixed $value, string $boolean = 'AND'): self
-	{
-		$this->havings[] = compact('column', 'operator', 'boolean');
-		$this->bindings['having'][] = $value;
-		return $this;
-	}
-	
-	// -------------------------------------------------------------------------
-	// ORDERING, LIMIT & OFFSET
-	// -------------------------------------------------------------------------
-	
-	public function orderBy(string $column, string $direction = 'ASC'): self
-	{
-		$this->orders[] = compact('column', 'direction');
-		return $this;
-	}
-	
-	public function latest(string $column = 'created_at'): self
-	{
-		return $this->orderBy($column, 'DESC');
-	}
-	
-	public function oldest(string $column = 'created_at'): self
-	{
-		return $this->orderBy($column, 'ASC');
-	}
-	
-	public function inRandomOrder(): self
-	{
-		return $this->orderBy('RAND()');
-	}
-	
-	public function limit(int $value): self
-	{
-		$this->limit = $value;
-		return $this;
-	}
-	
-	public function offset(int $value): self
-	{
-		$this->offset = $value;
-		return $this;
-	}
-	
-	// -------------------------------------------------------------------------
-	// EXECUTION: READ
-	// -------------------------------------------------------------------------
-	
-	public function get(): array
-	{
-		$statement = $this->executeQuery();
-		return $statement->fetchAll(PDO::FETCH_ASSOC);
-	}
-	
-	public function first(): ?array
-	{
-		$this->limit(1);
-		$result = $this->get();
-		return $result[0] ?? null;
-	}
-	
-	public function find(mixed $id, string $primaryKey = 'id'): ?array
-	{
-		return $this->where($primaryKey, '=', $id)->first();
-	}
-	
-	public function value(string $column): mixed
-	{
-		$result = $this->first();
-		return $result ? $result[$column] : null;
-	}
-	
-	public function pluck(string $column, ?string $key = null): array
-	{
-		$results = $this->get();
-		$plucked = [];
-		foreach ($results as $row) {
-			if ($key && isset($row[$key])) {
-				$plucked[$row[$key]] = $row[$column];
-			} else {
-				$plucked[] = $row[$column];
-			}
-		}
-		return $plucked;
-	}
-	
-	public function exists(): bool
-	{
-		$this->limit(1);
-		return !empty($this->get());
-	}
-	
-	public function paginate(int $perPage = 15, int $page = 1): array
-	{
-		// Get total count (ignoring limit/offset)
-		$totalBuilder = clone $this;
-		$total = $totalBuilder->count();
-		
-		// Get paginated results
-		$this->limit($perPage);
-		$this->offset(($page - 1) * $perPage);
-		$data = $this->get();
-		
-		return [
-			'data' => $data,
-			'total' => $total,
-			'per_page' => $perPage,
-			'current_page' => $page,
-			'last_page' => ceil($total / $perPage)
-		];
-	}
-	
-	// -------------------------------------------------------------------------
-	// AGGREGATES
-	// -------------------------------------------------------------------------
-	
-	public function count(string $column = '*'): int
-	{
-		return (int) $this->aggregate('COUNT', $column);
-	}
-	
-	public function max(string $column): mixed
-	{
-		return $this->aggregate('MAX', $column);
-	}
-	
-	public function min(string $column): mixed
-	{
-		return $this->aggregate('MIN', $column);
-	}
-	
-	public function avg(string $column): mixed
-	{
-		return $this->aggregate('AVG', $column);
-	}
-	
-	public function sum(string $column): mixed
-	{
-		return $this->aggregate('SUM', $column);
-	}
-	
-	private function aggregate(string $function, string $column): mixed
-	{
-		$this->columns = ["$function($column) as aggregate"];
-		$result = $this->get();
-		return $result[0]['aggregate'] ?? 0;
-	}
-	
-	// -------------------------------------------------------------------------
-	// EXECUTION: WRITE (CRUD)
-	// -------------------------------------------------------------------------
-	
-	public function insert(array $values): bool
-	{
-		if (empty($values)) return false;
-		
-		// Handle single or batch insert
-		$isBatch = isset($values[0]) && is_array($values[0]);
-		$rows = $isBatch ? $values : [$values];
-		$columns = array_keys($rows[0]);
-		
-		$columnList = implode(', ', $columns);
-		$placeholders = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
-		$placeholderList = implode(', ', array_fill(0, count($rows), $placeholders));
-		
-		$sql = "INSERT INTO {$this->table} ($columnList) VALUES $placeholderList";
-		
-		$bindings = [];
-		foreach ($rows as $row) {
-			foreach ($row as $value) {
-				$bindings[] = $value;
-			}
-		}
-		
-		$stmt = $this->pdo->prepare($sql);
-		return $stmt->execute($bindings);
-	}
-	
-	public function insertGetId(array $values): int|string|false
-	{
-		if ($this->insert($values)) {
-			return $this->pdo->lastInsertId();
-		}
-		return false;
-	}
-	
-	public function update(array $values): bool
-	{
-		$setClause = implode(', ', array_map(fn($col) => "$col = ?", array_keys($values)));
-		$sql = "UPDATE {$this->table} SET $setClause";
-		
-		$sql .= $this->compileWheres();
-		
-		// Update values come first, then where bindings
-		$bindings = array_merge(array_values($values), $this->bindings['where']);
-		
-		$stmt = $this->pdo->prepare($sql);
-		return $stmt->execute($bindings);
-	}
-	
-	public function delete(): bool
-	{
-		$sql = "DELETE FROM {$this->table}" . $this->compileWheres();
-		$stmt = $this->pdo->prepare($sql);
-		return $stmt->execute($this->bindings['where']);
-	}
-	
-	public function truncate(): bool
-	{
-		$stmt = $this->pdo->prepare("TRUNCATE TABLE {$this->table}");
-		return $stmt->execute();
-	}
-	
-	// -------------------------------------------------------------------------
-	// INTERNALS & COMPILATION
-	// -------------------------------------------------------------------------
-	
-	private function executeQuery(): \PDOStatement
-	{
-		$sql = $this->toSql();
-		$bindings = $this->getBindings();
-		
-		$stmt = $this->pdo->prepare($sql);
-		$stmt->execute($bindings);
-		return $stmt;
-	}
-	
-	public function toSql(): string
-	{
-		$sql = "SELECT " . ($this->distinct ? 'DISTINCT ' : '') . implode(', ', $this->columns) . " FROM {$this->table}";
-		
-		$sql .= $this->compileJoins();
-		$sql .= $this->compileWheres();
-		$sql .= $this->compileGroups();
-		$sql .= $this->compileHavings();
-		$sql .= $this->compileOrders();
-		$sql .= $this->compileLimit();
-		
-		return $sql;
-	}
-	
-	public function getBindings(): array
-	{
-		return array_merge(
-			$this->bindings['join'],
-			$this->bindings['where'],
-			$this->bindings['having'],
-			$this->bindings['order']
-		);
-	}
-	
-	/**
-	 * Debugging helper to dump SQL and bindings.
-	 */
-	public function dump(): void
-	{
-		echo "SQL: " . $this->toSql() . "\n";
-		echo "Bindings: " . print_r($this->getBindings(), true);
-		die;
-	}
-	
-	private function compileJoins(): string
-	{
-		return empty($this->joins) ? '' : ' ' . implode(' ', $this->joins);
-	}
-	
-	private function compileWheres(): string
-	{
-		if (empty($this->wheres)) {
-			return '';
-		}
-		
-		$sql = [];
-		foreach ($this->wheres as $i => $where) {
-			// First clause doesn't need boolean (AND/OR)
-			$boolean = $i === 0 ? 'WHERE' : $where['boolean'];
-			
-			$sql[] = match ($where['type']) {
-				'Basic' => "$boolean {$where['column']} {$where['operator']} ?",
-				'In' => "$boolean {$where['column']} IN ({$where['placeholders']})",
-				'NotIn' => "$boolean {$where['column']} NOT IN ({$where['placeholders']})",
-				'Null' => "$boolean {$where['column']} IS NULL",
-				'NotNull' => "$boolean {$where['column']} IS NOT NULL",
-				'Between' => "$boolean {$where['column']} BETWEEN ? AND ?",
-				'NotBetween' => "$boolean {$where['column']} NOT BETWEEN ? AND ?",
-				'Raw' => "$boolean {$where['sql']}",
-				default => ''
-			};
-		}
-		
-		return ' ' . implode(' ', $sql);
-	}
-	
-	private function compileGroups(): string
-	{
-		return empty($this->groups) ? '' : ' GROUP BY ' . implode(', ', $this->groups);
-	}
-	
-	private function compileHavings(): string
-	{
-		if (empty($this->havings)) return '';
-		
-		$sql = [];
-		foreach ($this->havings as $i => $having) {
-			$boolean = $i === 0 ? 'HAVING' : $having['boolean'];
-			$sql[] = "$boolean {$having['column']} {$having['operator']} ?";
-		}
-		return ' ' . implode(' ', $sql);
-	}
-	
-	private function compileOrders(): string
-	{
-		if (empty($this->orders)) return '';
-		
-		$sql = [];
-		foreach ($this->orders as $order) {
-			$sql[] = "{$order['column']} {$order['direction']}";
-		}
-		return ' ORDER BY ' . implode(', ', $sql);
-	}
-	
-	private function compileLimit(): string
-	{
-		$sql = '';
-		if ($this->limit) {
-			$sql .= " LIMIT {$this->limit}";
-		}
-		if ($this->offset) {
-			$sql .= " OFFSET {$this->offset}";
-		}
-		return $sql;
-	}
+    public function orWhere(string $column, mixed $operator, mixed $value = null): self
+    {
+        if (func_num_args() === 2) {
+            $value = $operator;
+            $operator = '=';
+        }
+        return $this->where($column, (string) $operator, $value, 'OR');
+    }
+
+    public function whereIn(string $column, array $values, string $boolean = 'AND', bool $not = false): self
+    {
+        $type = $not ? 'NotIn' : 'In';
+        $placeholders = implode(', ', array_fill(0, count($values), '?'));
+
+        $this->wheres[] = [
+            'type' => $type,
+            'column' => $column,
+            'placeholders' => $placeholders,
+            'boolean' => $boolean,
+        ];
+
+        foreach ($values as $value) {
+            $this->bindings['where'][] = $value;
+        }
+
+        return $this;
+    }
+
+    public function whereNotIn(string $column, array $values, string $boolean = 'AND'): self
+    {
+        return $this->whereIn($column, $values, $boolean, true);
+    }
+
+    public function whereNull(string $column, string $boolean = 'AND', bool $not = false): self
+    {
+        $type = $not ? 'NotNull' : 'Null';
+        $this->wheres[] = [
+            'type' => $type,
+            'column' => $column,
+            'boolean' => $boolean,
+        ];
+        return $this;
+    }
+
+    public function whereNotNull(string $column, string $boolean = 'AND'): self
+    {
+        return $this->whereNull($column, $boolean, true);
+    }
+
+    public function whereBetween(string $column, array $values, string $boolean = 'AND', bool $not = false): self
+    {
+        $type = $not ? 'NotBetween' : 'Between';
+        $this->wheres[] = [
+            'type' => $type,
+            'column' => $column,
+            'boolean' => $boolean,
+        ];
+        $this->bindings['where'][] = $values[0];
+        $this->bindings['where'][] = $values[1];
+        return $this;
+    }
+
+    public function whereRaw(string $sql, array $bindings = [], string $boolean = 'AND'): self
+    {
+        $this->wheres[] = [
+            'type' => 'Raw',
+            'sql' => $sql,
+            'boolean' => $boolean,
+        ];
+        $this->bindings['where'] = array_merge($this->bindings['where'], $bindings);
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+    // GROUP BY & HAVING
+    // -------------------------------------------------------------------------
+
+    public function groupBy(string ...$groups): self
+    {
+        $this->groups = array_merge($this->groups, $groups);
+        return $this;
+    }
+
+    public function having(string $column, string $operator, mixed $value, string $boolean = 'AND'): self
+    {
+        $this->havings[] = compact('column', 'operator', 'boolean');
+        $this->bindings['having'][] = $value;
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+    // ORDERING, LIMIT & OFFSET
+    // -------------------------------------------------------------------------
+
+    public function orderBy(string $column, string $direction = 'ASC'): self
+    {
+        $this->orders[] = compact('column', 'direction');
+        return $this;
+    }
+
+    public function latest(string $column = 'created_at'): self
+    {
+        return $this->orderBy($column, 'DESC');
+    }
+
+    public function oldest(string $column = 'created_at'): self
+    {
+        return $this->orderBy($column, 'ASC');
+    }
+
+    public function inRandomOrder(): self
+    {
+        return $this->orderBy('RAND()');
+    }
+
+    public function limit(int $value): self
+    {
+        $this->limit = $value;
+        return $this;
+    }
+
+    public function offset(int $value): self
+    {
+        $this->offset = $value;
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+    // EXECUTION: READ
+    // -------------------------------------------------------------------------
+
+    public function get(): array
+    {
+        $statement = $this->executeQuery();
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function first(): ?array
+    {
+        $this->limit(1);
+        $result = $this->get();
+        return $result[0] ?? null;
+    }
+
+    public function find(mixed $id, string $primaryKey = 'id'): ?array
+    {
+        return $this->where($primaryKey, '=', $id)->first();
+    }
+
+    public function value(string $column): mixed
+    {
+        $result = $this->first();
+        return $result ? $result[$column] : null;
+    }
+
+    public function pluck(string $column, ?string $key = null): array
+    {
+        $results = $this->get();
+        $plucked = [];
+        foreach ($results as $row) {
+            if ($key && isset($row[$key])) {
+                $plucked[$row[$key]] = $row[$column];
+            } else {
+                $plucked[] = $row[$column];
+            }
+        }
+        return $plucked;
+    }
+
+    public function exists(): bool
+    {
+        $this->limit(1);
+        return !empty($this->get());
+    }
+
+    public function paginate(int $perPage = 15, int $page = 1): array
+    {
+        // Get total count (ignoring limit/offset)
+        $totalBuilder = clone $this;
+        $total = $totalBuilder->count();
+
+        // Get paginated results
+        $this->limit($perPage);
+        $this->offset(($page - 1) * $perPage);
+        $data = $this->get();
+
+        return [
+            'data' => $data,
+            'total' => $total,
+            'per_page' => $perPage,
+            'current_page' => $page,
+            'last_page' => ceil($total / $perPage),
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // AGGREGATES
+    // -------------------------------------------------------------------------
+
+    public function count(string $column = '*'): int
+    {
+        return (int) $this->aggregate('COUNT', $column);
+    }
+
+    public function max(string $column): mixed
+    {
+        return $this->aggregate('MAX', $column);
+    }
+
+    public function min(string $column): mixed
+    {
+        return $this->aggregate('MIN', $column);
+    }
+
+    public function avg(string $column): mixed
+    {
+        return $this->aggregate('AVG', $column);
+    }
+
+    public function sum(string $column): mixed
+    {
+        return $this->aggregate('SUM', $column);
+    }
+
+    private function aggregate(string $function, string $column): mixed
+    {
+        $this->columns = ["$function($column) as aggregate"];
+        $result = $this->get();
+        return $result[0]['aggregate'] ?? 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // EXECUTION: WRITE (CRUD)
+    // -------------------------------------------------------------------------
+
+    public function insert(array $values): bool
+    {
+        if (empty($values)) {
+            return false;
+        }
+
+        // Handle single or batch insert
+        $isBatch = isset($values[0]) && is_array($values[0]);
+        $rows = $isBatch ? $values : [$values];
+        $columns = array_keys($rows[0]);
+
+        $columnList = implode(', ', $columns);
+        $placeholders = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
+        $placeholderList = implode(', ', array_fill(0, count($rows), $placeholders));
+
+        $sql = "INSERT INTO {$this->table} ($columnList) VALUES $placeholderList";
+
+        $bindings = [];
+        foreach ($rows as $row) {
+            foreach ($row as $value) {
+                $bindings[] = $value;
+            }
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($bindings);
+    }
+
+    public function insertGetId(array $values): int|string|false
+    {
+        if ($this->insert($values)) {
+            return $this->pdo->lastInsertId();
+        }
+        return false;
+    }
+
+    public function update(array $values): bool
+    {
+        $setClause = implode(', ', array_map(fn ($col) => "$col = ?", array_keys($values)));
+        $sql = "UPDATE {$this->table} SET $setClause";
+
+        $sql .= $this->compileWheres();
+
+        // Update values come first, then where bindings
+        $bindings = array_merge(array_values($values), $this->bindings['where']);
+
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($bindings);
+    }
+
+    public function delete(): bool
+    {
+        $sql = "DELETE FROM {$this->table}" . $this->compileWheres();
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($this->bindings['where']);
+    }
+
+    public function truncate(): bool
+    {
+        $stmt = $this->pdo->prepare("TRUNCATE TABLE {$this->table}");
+        return $stmt->execute();
+    }
+
+    // -------------------------------------------------------------------------
+    // INTERNALS & COMPILATION
+    // -------------------------------------------------------------------------
+
+    private function executeQuery(): \PDOStatement
+    {
+        $sql = $this->toSql();
+        $bindings = $this->getBindings();
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($bindings);
+        return $stmt;
+    }
+
+    public function toSql(): string
+    {
+        $sql = 'SELECT ' . ($this->distinct ? 'DISTINCT ' : '') . implode(', ', $this->columns) . " FROM {$this->table}";
+
+        $sql .= $this->compileJoins();
+        $sql .= $this->compileWheres();
+        $sql .= $this->compileGroups();
+        $sql .= $this->compileHavings();
+        $sql .= $this->compileOrders();
+        $sql .= $this->compileLimit();
+
+        return $sql;
+    }
+
+    public function getBindings(): array
+    {
+        return array_merge(
+            $this->bindings['join'],
+            $this->bindings['where'],
+            $this->bindings['having'],
+            $this->bindings['order']
+        );
+    }
+
+    /**
+     * Debugging helper to dump SQL and bindings.
+     */
+    public function dump(): void
+    {
+        echo 'SQL: ' . $this->toSql() . "\n";
+        echo 'Bindings: ' . print_r($this->getBindings(), true);
+        die;
+    }
+
+    private function compileJoins(): string
+    {
+        return empty($this->joins) ? '' : ' ' . implode(' ', $this->joins);
+    }
+
+    private function compileWheres(): string
+    {
+        if (empty($this->wheres)) {
+            return '';
+        }
+
+        $sql = [];
+        foreach ($this->wheres as $i => $where) {
+            // First clause doesn't need boolean (AND/OR)
+            $boolean = $i === 0 ? 'WHERE' : $where['boolean'];
+
+            $sql[] = match ($where['type']) {
+                'Basic' => "$boolean {$where['column']} {$where['operator']} ?",
+                'In' => "$boolean {$where['column']} IN ({$where['placeholders']})",
+                'NotIn' => "$boolean {$where['column']} NOT IN ({$where['placeholders']})",
+                'Null' => "$boolean {$where['column']} IS NULL",
+                'NotNull' => "$boolean {$where['column']} IS NOT NULL",
+                'Between' => "$boolean {$where['column']} BETWEEN ? AND ?",
+                'NotBetween' => "$boolean {$where['column']} NOT BETWEEN ? AND ?",
+                'Raw' => "$boolean {$where['sql']}",
+                default => ''
+            };
+        }
+
+        return ' ' . implode(' ', $sql);
+    }
+
+    private function compileGroups(): string
+    {
+        return empty($this->groups) ? '' : ' GROUP BY ' . implode(', ', $this->groups);
+    }
+
+    private function compileHavings(): string
+    {
+        if (empty($this->havings)) {
+            return '';
+        }
+
+        $sql = [];
+        foreach ($this->havings as $i => $having) {
+            $boolean = $i === 0 ? 'HAVING' : $having['boolean'];
+            $sql[] = "$boolean {$having['column']} {$having['operator']} ?";
+        }
+        return ' ' . implode(' ', $sql);
+    }
+
+    private function compileOrders(): string
+    {
+        if (empty($this->orders)) {
+            return '';
+        }
+
+        $sql = [];
+        foreach ($this->orders as $order) {
+            $sql[] = "{$order['column']} {$order['direction']}";
+        }
+        return ' ORDER BY ' . implode(', ', $sql);
+    }
+
+    private function compileLimit(): string
+    {
+        $sql = '';
+        if ($this->limit) {
+            $sql .= " LIMIT {$this->limit}";
+        }
+        if ($this->offset) {
+            $sql .= " OFFSET {$this->offset}";
+        }
+        return $sql;
+    }
 }

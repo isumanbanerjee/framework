@@ -2,8 +2,8 @@
 
 namespace Core\Model;
 
-use Exception;
 use Closure;
+use Exception;
 
 /**
  * Enterprise Event System
@@ -63,12 +63,12 @@ class Event
             if (strpos($event, '*') !== false) {
                 self::$wildcards[$event][] = [
                     'listener' => $listener,
-                    'priority' => $priority
+                    'priority' => $priority,
                 ];
             } else {
                 self::$listeners[$event][] = [
                     'listener' => $listener,
-                    'priority' => $priority
+                    'priority' => $priority,
                 ];
             }
         }
@@ -155,7 +155,7 @@ class Event
 
         [$event, $payload] = self::parseEventAndPayload($event, $payload);
 
-        self::$queue->push(function() use ($event, $payload) {
+        self::$queue->push(function () use ($event, $payload) {
             self::fire($event, $payload);
         }, [], $queue);
     }
@@ -224,7 +224,7 @@ class Event
         }
 
         // Sort by priority
-        usort($listeners, function($a, $b) {
+        usort($listeners, function ($a, $b) {
             return $a['priority'] - $b['priority'];
         });
 
@@ -294,7 +294,7 @@ class Event
             $logger->logError('Event listener failed', [
                 'event' => $event,
                 'listener' => is_object($listener) ? get_class($listener) : $listener,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return null;
@@ -389,4 +389,3 @@ interface EventSubscriber
      */
     public function subscribe(): array;
 }
-

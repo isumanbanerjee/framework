@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace Core\Model;
 
 use Core\Model\Database\Database;
-use Core\Model\Error;
 use Exception;
 
 /**
@@ -206,7 +205,7 @@ class Validation
             if (defined('TEST_ENV') || php_sapi_name() === 'cli') {
                 throw $e;
             }
-            
+
             $error = new Error();
             $error->terminateWithError(
                 'VALIDATION_FAILED',
@@ -484,7 +483,7 @@ class Validation
             if (empty($params[0])) {
                 throw new Exception('Table name required for unique validation');
             }
-            
+
             $table = $params[0];
             $column = $params[1] ?? $field;
             $excludeId = $params[2] ?? null;
@@ -493,7 +492,7 @@ class Validation
             $queryParams = [':value' => $value];
 
             if ($excludeId) {
-                $query .= " AND id != :id";
+                $query .= ' AND id != :id';
                 $queryParams[':id'] = $excludeId;
             }
 
@@ -509,7 +508,7 @@ class Validation
             if (defined('TEST_ENV') || php_sapi_name() === 'cli') {
                 throw $e;
             }
-            
+
             $error = new Error();
             $error->terminateWithError(
                 'VALIDATION_UNIQUE_CHECK_FAILED',
@@ -595,7 +594,7 @@ class Validation
             $this->addError(
                 $field,
                 "The $field must be at least 8 characters and include uppercase, "
-                . "lowercase, a number, and a special character."
+                . 'lowercase, a number, and a special character.'
             );
             return false;
         }
