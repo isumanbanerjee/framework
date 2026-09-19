@@ -177,7 +177,10 @@ class App
      * Load configuration from file system
      *
      * Loads configuration from config_compiled.php (preferred) or falls
-     * back to parsing config.env file. Stores result in memory cache.
+     * back to parsing an environment-specific config.env.{APP_ENV} file
+     * (when the APP_ENV process environment variable is set and a
+     * matching file exists) or plain config.env otherwise. Stores the
+     * result in memory cache.
      *
      * @return void
      *
@@ -186,14 +189,21 @@ class App
      */
     private function loadConfiguration(): void
     {
-        $compiledFile = __DIR__ . '/../../Configuration/config_compiled.php';
-        $envFile = __DIR__ . '/../../Configuration/config.env';
+        $configDir = __DIR__ . '/../../Configuration';
+        $compiledFile = $configDir . '/config_compiled.php';
 
         if (file_exists($compiledFile)) {
             $this->config = include $compiledFile;
-        } elseif (file_exists($envFile)) {
+            return;
+        }
+
+        $appEnv = getenv('APP_ENV');
+        $appEnv = is_string($appEnv) && $appEnv !== '' ? $appEnv : ($_ENV['APP_ENV'] ?? null);
+        $envFile = self::resolveEnvFile($configDir, is_string($appEnv) ? $appEnv : null);
+
+        if (file_exists($envFile)) {
             try {
-                $this->config = (new EnvFileParser(dirname($envFile)))->parse($envFile);
+                $this->config = (new EnvFileParser($configDir))->parse($envFile);
             } catch (\Throwable $e) {
                 $this->config = [];
                 error_log('Failed to parse config.env file: ' . $e->getMessage());
@@ -202,6 +212,34 @@ class App
             $this->config = [];
             error_log('No configuration file found');
         }
+    }
+
+    /**
+     * Resolve which config file to load for a given environment.
+     *
+     * Prefers `config.env.{$appEnv}` (e.g. `config.env.staging`) when
+     * $appEnv is set and that file exists; falls back to plain
+     * `config.env` otherwise. Pure aside from the file_exists() check,
+     * so it's directly unit-testable against a real fixture directory.
+     *
+     * @param string      $directory Directory containing config files.
+     * @param string|null $appEnv    APP_ENV value, or null when unset.
+     *
+     * @return string Absolute path to the config file to load.
+     *
+     * @since 1.0.0
+     */
+    public static function resolveEnvFile(string $directory, ?string $appEnv): string
+    {
+        if ($appEnv !== null && $appEnv !== '') {
+            $envSpecific = $directory . '/config.env.' . $appEnv;
+
+            if (file_exists($envSpecific)) {
+                return $envSpecific;
+            }
+        }
+
+        return $directory . '/config.env';
     }
 
     /**

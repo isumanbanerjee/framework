@@ -10,6 +10,21 @@ OmnioPHP reads configuration from `.env`-style files in `Configuration/`, parsed
 | `Configuration/error.env` | Human-readable error messages keyed by error code |
 | `Configuration/config.env.example` | Placeholder template — copy to `config.env` |
 | `Configuration/config.env.testing.example` | SQLite-based config for the test suite |
+| `Configuration/config.env.development.example` | Local development template — verbose logging, debug on |
+| `Configuration/config.env.staging.example` | Staging template — production-like infra, `info`-level logging |
+| `Configuration/config.env.production.example` | Production template — debug off, locked-down CORS, `warning`-level logging |
+
+## Environment-specific config files
+
+`App::config()` normally reads `Configuration/config.env`. If the `APP_ENV` **process** environment variable is set (e.g. exported by your web server, container, or process manager — distinct from the `APP_ENV` *key* stored inside `config.env`) and a matching `Configuration/config.env.{APP_ENV}` file exists, that file is loaded instead:
+
+```bash
+APP_ENV=staging php -S localhost:8000   # loads Configuration/config.env.staging if present
+```
+
+Falls back to plain `config.env` when `APP_ENV` is unset or no matching file exists, so this is fully opt-in — existing single-`config.env` deployments are unaffected. To adopt it, copy the relevant example (e.g. `config.env.production.example` → `config.env.production`) and set the real `APP_ENV` process variable in that environment's deploy configuration. As with `config.env` itself, never commit the real per-environment files — only the `.example` templates belong in version control (see `.gitignore`).
+
+Resolution order is the same regardless of environment: `config_compiled.php` (if present) always wins over any `.env` file — see [Config caching](#config-caching) below.
 
 ## Reading configuration
 

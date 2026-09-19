@@ -14,4 +14,8 @@ assets/build/
 .phpunit.cache/
 .php-cs-fixer.cache
 Configuration/*_compiled.php
+Configuration/config.env.development
+Configuration/config.env.staging
+Configuration/config.env.production
+Configuration/config.env.testing
 .idea/
