@@ -376,7 +376,10 @@ class Logger
         $contextStr = !empty($context) ? ' ' . json_encode($context) : '';
         $logMessage = "[$date] [$level] $message$contextStr" . PHP_EOL;
 
-        file_put_contents($this->logFile, $logMessage, FILE_APPEND);
+        // A failed log write must never surface to the client - suppress and
+        // drop it rather than letting file_put_contents() emit a warning into
+        // the response body.
+        @file_put_contents($this->logFile, $logMessage, FILE_APPEND);
     }
 
     /**

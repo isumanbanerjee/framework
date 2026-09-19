@@ -98,12 +98,13 @@ class Middleware
             'admin' => AdminMiddleware::class,
             'json' => JsonMiddleware::class,
             'log' => LogMiddleware::class,
+            'security-headers' => SecurityHeadersMiddleware::class,
         ];
 
         $this->groups = [
-            'web' => ['csrf', 'log'],
-            'api' => ['throttle', 'json', 'cors', 'log'],
-            'admin' => ['auth', 'admin', 'csrf', 'log'],
+            'web' => ['security-headers', 'csrf', 'log'],
+            'api' => ['security-headers', 'throttle', 'json', 'cors', 'log'],
+            'admin' => ['security-headers', 'auth', 'admin', 'csrf', 'log'],
         ];
     }
 
@@ -454,6 +455,23 @@ class JsonMiddleware
     public function handle(Request $request, Response $response, Closure $next)
     {
         $response->setHeader('Content-Type', 'application/json');
+        return $next($request, $response);
+    }
+}
+
+/**
+ * Security Headers Middleware
+ *
+ * Emits Response::securityHeaders() (X-Frame-Options, X-Content-Type-Options,
+ * Referrer-Policy, Content-Security-Policy, Permissions-Policy) on every
+ * response in the group it's attached to.
+ */
+class SecurityHeadersMiddleware
+{
+    public function handle(Request $request, Response $response, Closure $next)
+    {
+        $response->sendSecurityHeaders();
+
         return $next($request, $response);
     }
 }

@@ -72,6 +72,7 @@ final class AuthRoutesTest extends TestCase
             '/name="csrf_token" value="[0-9a-f]{64}"/',
             $response->body
         );
+        $this->assertSame('nosniff', $response->headers['X-Content-Type-Options']);
     }
 
     public function testGetRegisterRendersFormWithCsrfToken(): void

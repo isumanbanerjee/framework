@@ -32,3 +32,8 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
+    # logs/ is bind-mounted from the host, so its ownership/perms come from
+    # the host filesystem, not the image - make sure the www-data worker
+    # processes can actually write to it before starting Apache.
+    command: >
+      bash -c "mkdir -p /var/www/html/logs && chmod 777 /var/www/html/logs && apache2-foreground"

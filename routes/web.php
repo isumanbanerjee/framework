@@ -15,7 +15,7 @@ use Core\Model\Router;
 
 /** @var Router $router */
 
-$router->group(['middleware' => ['csrf']], function (Router $router) {
+$router->group(['middleware' => ['web']], function (Router $router) {
     $router->get('/login', 'System\Controller\AuthController@showLogin')->name('login');
     $router->post('/login', 'System\Controller\AuthController@login');
     $router->get('/register', 'System\Controller\AuthController@showRegister')->name('register');
@@ -23,5 +23,5 @@ $router->group(['middleware' => ['csrf']], function (Router $router) {
 });
 
 $router->post('/logout', 'System\Controller\AuthController@logout')
-    ->middleware('csrf')
+    ->middleware('web')
     ->name('logout');
